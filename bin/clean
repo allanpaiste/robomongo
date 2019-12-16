@@ -2,11 +2,10 @@
 
 FILE_PATH="$(pwd)/${BASH_SOURCE[0]}"
 BIN_DIR="$(cd "$(dirname "${FILE_PATH}")" && pwd)"
-PROJECT_DIR=$(dirname ${BIN_DIR})
+
+source ${BIN_DIR}/common/setup ${1}
 
 echo "Bin dir: ${BIN_DIR}"
 echo "Project dir: ${PROJECT_DIR}"
-
-source ${BIN_DIR}/common/setup ${1}
 
 cd ${VARIANT_DIR} && rm -rf ${BUILD_DIR_NAME}

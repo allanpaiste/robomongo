@@ -9,8 +9,10 @@ else
   set -- release "$@"
 fi
 
-# @todo: tank - make it possible to auto-search this path and then cache it
-REPOSITORIES_HOME=$(cd ~ && pwd)/repos
+FILE_PATH="${BASH_SOURCE[0]}"
+BIN_DIR="$(cd "$(dirname ${FILE_PATH})/.." && pwd)"
+PROJECT_DIR=$(dirname ${BIN_DIR})
+REPOS_DIR=$(dirname ${PROJECT_DIR})
 
 # Build dir name is a lowercase of BUILD_TYPE
 # i.e. debug
