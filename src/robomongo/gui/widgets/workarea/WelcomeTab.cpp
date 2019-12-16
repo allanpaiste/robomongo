@@ -123,9 +123,9 @@ namespace Robomongo
         QWidget(parent), _parent(parent)
     {
         QString const prefix = AppRegistry::instance().settingsManager()->useHttps() ? "https" : "http";
-        _pic1_URL = prefix + QString("://rm-feed.3t.io/") + IMAGE_PATH;
-        _text1_URL = prefix + QString("://rm-feed.3t.io/") + CONTENTS_PATH;
-        _rss_URL = prefix + QString("://blog.robomongo.org/rss/");
+//        _pic1_URL = prefix + QString("://rm-feed.3t.io/") + IMAGE_PATH;
+//        _text1_URL = prefix + QString("://rm-feed.3t.io/") + CONTENTS_PATH;
+//        _rss_URL = prefix + QString("://blog.robomongo.org/rss/");
 
         /* Temporarily disabling Recent Connections feature
         AppRegistry::instance().bus()->subscribe(this, ConnectionEstablishedEvent::Type);
@@ -177,83 +177,85 @@ namespace Robomongo
         connectButtonLay->addStretch();
         */
 
-        //// What's new section
-        _whatsNewHeader = new QLabel;
-        _whatsNewHeader->setHidden(true);
-        _whatsNewText = new QLabel;
-        _whatsNewText->setTextInteractionFlags(Qt::TextSelectableByMouse);
-        _whatsNewText->setTextFormat(Qt::RichText);
-        _whatsNewText->setTextInteractionFlags(Qt::TextBrowserInteraction);
-        _whatsNewText->setOpenExternalLinks(true);
-        _whatsNewText->setWordWrap(true);
-        _whatsNewText->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
+        // @todo: tank - add something useful here
 
-        _pic1 = new QLabel;
-        _pic1->setTextInteractionFlags(Qt::TextSelectableByMouse);
-        _pic1->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
-        _pic1->setScaledContents(true);
-
-        _blogsHeader = new QLabel(BlogsHeader);
-        _blogsHeader->setHidden(true);
-
-        //// --- Network Access Managers
-        auto text1Downloader = new QNetworkAccessManager;
-        VERIFY(connect(text1Downloader, SIGNAL(finished(QNetworkReply*)), 
-                       this, SLOT(on_downloadTextReply(QNetworkReply*))));
-        text1Downloader->head(QNetworkRequest(_text1_URL));
-
-        auto pic1Downloader = new QNetworkAccessManager;
-        VERIFY(connect(pic1Downloader, SIGNAL(finished(QNetworkReply*)), 
-               this, SLOT(on_downloadPictureReply(QNetworkReply*))));
-        pic1Downloader->head(QNetworkRequest(_pic1_URL));
-
-        auto rssDownloader = new QNetworkAccessManager;
-        VERIFY(connect(rssDownloader, SIGNAL(finished(QNetworkReply*)), 
-                       this, SLOT(on_downloadRssReply(QNetworkReply*))));
-        rssDownloader->get(QNetworkRequest(_rss_URL));
-
-        //// --- Layouts
-        _allBlogsButton = new QPushButton("All Blog Posts");
-        _allBlogsButton->setHidden(true);
-        _allBlogsButton->setStyleSheet("color: #106CD6");
-        VERIFY(connect(_allBlogsButton, SIGNAL(clicked()), this, SLOT(on_allBlogsButton_clicked())));
-        _allBlogsButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
-
-
-        _blogLinksLay = new QVBoxLayout;
-        _blogLinksLay->setAlignment(Qt::AlignLeft);
-
-        auto rightLayout = new QVBoxLayout;
-        rightLayout->setContentsMargins(20, -1, -1, -1);
-        rightLayout->addWidget(_blogsHeader, 0, Qt::AlignTop);
-        rightLayout->addLayout(_blogLinksLay);
-        rightLayout->addSpacing(15);
-        rightLayout->addWidget(_allBlogsButton, 0, Qt::AlignLeft);
-        rightLayout->addStretch();
-
-        auto leftLayout = new QVBoxLayout;
-        /* Temporarily disabling Recent Connections feature
-        leftLayout->addWidget(recentConnHeader, 0, Qt::AlignTop);
-        leftLayout->addLayout(_recentConnsLay);
-        leftLayout->addSpacing(10);
-        leftLayout->addLayout(connectButtonLay);
-        //leftLayout->addStretch();
-        leftLayout->addSpacing(20);
-        */
-        leftLayout->addWidget(_whatsNewHeader, 0, Qt::AlignTop);
-        leftLayout->addWidget(_pic1, 0, Qt::AlignTop);
-        leftLayout->addWidget(_whatsNewText, 0, Qt::AlignTop);
-        leftLayout->addStretch();
-        leftLayout->setSizeConstraint(QLayout::SetMinimumSize);
-
-        auto mainLayout = new QHBoxLayout;
-        mainLayout->setContentsMargins(20, 20, -1, -1);
-        mainLayout->addLayout(leftLayout);
-        mainLayout->addSpacing(20);
-        mainLayout->addLayout(rightLayout);
-        mainLayout->setSizeConstraint(QLayout::SetMinimumSize);
-
-        setLayout(mainLayout);
+//        //// What's new section
+//        _whatsNewHeader = new QLabel;
+//        _whatsNewHeader->setHidden(true);
+//        _whatsNewText = new QLabel;
+//        _whatsNewText->setTextInteractionFlags(Qt::TextSelectableByMouse);
+//        _whatsNewText->setTextFormat(Qt::RichText);
+//        _whatsNewText->setTextInteractionFlags(Qt::TextBrowserInteraction);
+//        _whatsNewText->setOpenExternalLinks(true);
+//        _whatsNewText->setWordWrap(true);
+//        _whatsNewText->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
+//
+//        _pic1 = new QLabel;
+//        _pic1->setTextInteractionFlags(Qt::TextSelectableByMouse);
+//        _pic1->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
+//        _pic1->setScaledContents(true);
+//
+//        _blogsHeader = new QLabel(BlogsHeader);
+//        _blogsHeader->setHidden(true);
+//
+//        //// --- Network Access Managers
+//        auto text1Downloader = new QNetworkAccessManager;
+//        VERIFY(connect(text1Downloader, SIGNAL(finished(QNetworkReply*)),
+//                       this, SLOT(on_downloadTextReply(QNetworkReply*))));
+//        text1Downloader->head(QNetworkRequest(_text1_URL));
+//
+//        auto pic1Downloader = new QNetworkAccessManager;
+//        VERIFY(connect(pic1Downloader, SIGNAL(finished(QNetworkReply*)),
+//               this, SLOT(on_downloadPictureReply(QNetworkReply*))));
+//        pic1Downloader->head(QNetworkRequest(_pic1_URL));
+//
+//        auto rssDownloader = new QNetworkAccessManager;
+//        VERIFY(connect(rssDownloader, SIGNAL(finished(QNetworkReply*)),
+//                       this, SLOT(on_downloadRssReply(QNetworkReply*))));
+//        rssDownloader->get(QNetworkRequest(_rss_URL));
+//
+//        //// --- Layouts
+//        _allBlogsButton = new QPushButton("All Blog Posts");
+//        _allBlogsButton->setHidden(true);
+//        _allBlogsButton->setStyleSheet("color: #106CD6");
+//        VERIFY(connect(_allBlogsButton, SIGNAL(clicked()), this, SLOT(on_allBlogsButton_clicked())));
+//        _allBlogsButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
+//
+//
+//        _blogLinksLay = new QVBoxLayout;
+//        _blogLinksLay->setAlignment(Qt::AlignLeft);
+//
+//        auto rightLayout = new QVBoxLayout;
+//        rightLayout->setContentsMargins(20, -1, -1, -1);
+//        rightLayout->addWidget(_blogsHeader, 0, Qt::AlignTop);
+//        rightLayout->addLayout(_blogLinksLay);
+//        rightLayout->addSpacing(15);
+//        rightLayout->addWidget(_allBlogsButton, 0, Qt::AlignLeft);
+//        rightLayout->addStretch();
+//
+//        auto leftLayout = new QVBoxLayout;
+//        /* Temporarily disabling Recent Connections feature
+//        leftLayout->addWidget(recentConnHeader, 0, Qt::AlignTop);
+//        leftLayout->addLayout(_recentConnsLay);
+//        leftLayout->addSpacing(10);
+//        leftLayout->addLayout(connectButtonLay);
+//        //leftLayout->addStretch();
+//        leftLayout->addSpacing(20);
+//        */
+//        leftLayout->addWidget(_whatsNewHeader, 0, Qt::AlignTop);
+//        leftLayout->addWidget(_pic1, 0, Qt::AlignTop);
+//        leftLayout->addWidget(_whatsNewText, 0, Qt::AlignTop);
+//        leftLayout->addStretch();
+//        leftLayout->setSizeConstraint(QLayout::SetMinimumSize);
+//
+//        auto mainLayout = new QHBoxLayout;
+//        mainLayout->setContentsMargins(20, 20, -1, -1);
+//        mainLayout->addLayout(leftLayout);
+//        mainLayout->addSpacing(20);
+//        mainLayout->addLayout(rightLayout);
+//        mainLayout->setSizeConstraint(QLayout::SetMinimumSize);
+//
+//        setLayout(mainLayout);
     }
 
     WelcomeTab::~WelcomeTab()

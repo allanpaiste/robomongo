@@ -25,6 +25,8 @@ include(RobomongoTargetArch)
 include(RobomongoInstallQt)
 include(RobomongoPackage)
 
+find_library (LIBSSL NAMES libssl.a PATHS CMAKE_LIBRARY_PATH STATIC IMPORTED)
+
 # Search for dependencies
 find_package(Threading REQUIRED)    # Wrapper arround CMake "Threads" module
 find_package(Qt5Core REQUIRED)

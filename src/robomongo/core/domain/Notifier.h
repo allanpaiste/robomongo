@@ -57,6 +57,8 @@ namespace Robomongo
         void onInsertDocument();
         void onCopyDocument();
         void onCopyTimestamp();
+        void onFindReferredDocument();
+        void onFindReferredDocument(const QModelIndex &index);
         void onCopyJson();
         void handle(InsertDocumentResponse *event);
         void handle(RemoveDocumentResponse *event);
@@ -77,6 +79,7 @@ namespace Robomongo
         QAction *_copyValueNameAction;
         QAction *_copyValuePathAction;
         QAction *_copyTimestampAction;
+        QAction *_findReferredDocument;
         QAction *_copyJsonAction;
         const MongoQueryInfo _queryInfo;
 

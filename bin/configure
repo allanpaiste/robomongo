@@ -1,8 +1,21 @@
 #!/usr/bin/env bash
 
-BIN_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"       # Get directory of this file
-PROJECT_DIR=$(dirname $BIN_DIR)                                   # Get root directory of project
-source $BIN_DIR/common/setup $1
+FILE_PATH="$(pwd)/${BASH_SOURCE[0]}"
+BIN_DIR="$(cd "$(dirname "${FILE_PATH}")" && pwd)"
+PROJECT_DIR=$(dirname ${BIN_DIR})
 
-cd $BUILD_DIR
-cmake -D "CMAKE_PREFIX_PATH=$PREFIX_PATH" -D "CMAKE_BUILD_TYPE=$BUILD_TYPE" -D "CMAKE_INSTALL_PREFIX=$INSTALL_PREFIX" "${@:2}" $PROJECT_DIR
+echo "Bin: ${BIN_DIR}"
+echo "Project: ${PROJECT_DIR}"
+
+source ${BIN_DIR}/common/setup ${1}
+
+cd ${BUILD_DIR}
+
+IDE_BUILD_TYPE="debug" # otherwise: opt?
+
+cmake \
+  -D "CMAKE_PREFIX_PATH=${PREFIX_PATH}" \
+  -D "CMAKE_BUILD_TYPE=${BUILD_TYPE}" \
+  -D "CMAKE_INSTALL_PREFIX=${INSTALL_PREFIX}" \
+  -D "CMAKE_PREFIX_PATH=/usr/local/Cellar/openssl/1.0.2t;${REPOSITORIES_HOME}/robomongo-shell;${REPOSITORIES_HOME}/robomongo-shell/build/${IDE_BUILD_TYPE}" \
+  "${@:2}" ${PROJECT_DIR}

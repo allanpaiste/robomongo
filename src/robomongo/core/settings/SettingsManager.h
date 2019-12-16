@@ -23,7 +23,9 @@ namespace Robomongo
                                                                         .arg(PROJECT_VERSION);  
     // Current config file directory
     auto const ConfigDir = QString("%1/.3T/robo-3t/%2/").arg(QDir::homePath())
-                                                        .arg(PROJECT_VERSION);  
+                                                        .arg(PROJECT_VERSION);
+
+    auto const ExtrasConfigPath = QString("%1/extras.json").arg(ConfigDir);
     /* Temporarily disabling Recent Connections feature
     struct RecentConnection
     {
@@ -199,6 +201,10 @@ namespace Robomongo
         bool programExitedNormally() const { return _programExitedNormally; }
 
         bool useHttps() const { return _useHttps; }
+
+        std::map<std::string, std::string> tableRelations() const { return _nameTemplates; }
+
+
         void setUseHttps(bool status) { _useHttps = status; }
 
         /**
@@ -288,5 +294,6 @@ namespace Robomongo
         // List of config. file absolute paths of old versions
         // Must be updated with care and with every new version. Details on cpp file.       
         static std::vector<QString> const _configFilesOfOldVersions;
+        static std::map<std::string, std::string> _nameTemplates;
     };
 }

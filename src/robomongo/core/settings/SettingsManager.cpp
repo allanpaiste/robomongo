@@ -73,7 +73,9 @@ namespace Robomongo
         CONFIG_FILE_0_8_5                                                           // CONFIG_FILE_0_8_5
     };
 
-    std::vector<ConnectionSettings*>  SettingsManager::_connections;
+    std::vector<ConnectionSettings*> SettingsManager::_connections;
+
+    std::map<std::string, std::string> SettingsManager::_nameTemplates;
     
     // Temporarily disabling Recent Connections feature
     // std::vector<RecentConnection> SettingsManager::_recentConnections;
@@ -275,6 +277,21 @@ namespace Robomongo
             addConnection(connSettings);
         }
 
+        if (map.contains("relations")) {
+            _nameTemplates.clear();
+
+            QVariantList const& relationsList = map.value("relations").toList();
+
+            for (auto const& item : relationsList) {
+                auto itemList = item.toList();
+
+                _nameTemplates.insert(_nameTemplates.end(), {
+                        itemList.at(0).toString().toStdString(),
+                        itemList.at(1).toString().toStdString()
+                });
+            }
+        }
+
         /* Temporarily disabling Recent Connections feature
         // Load recent connections
         _recentConnections.clear();
@@ -375,6 +392,20 @@ namespace Robomongo
             list.append(conn->toVariant().toMap());
 
         map.insert("connections", list);
+
+        // 20. Save relations
+        QVariantList relationsList;
+
+        for (auto & _nameTemplate : _nameTemplates) {
+            QStringList relation;
+
+            relation.append(QString::fromStdString(_nameTemplate.first));
+            relation.append(QString::fromStdString(_nameTemplate.second));
+
+            relationsList.insert(relationsList.size(), relation);
+        }
+
+        map.insert("relations", relationsList);
 
         /* Temporarily disabling Recent Connections feature
         // 13. Save recent connections

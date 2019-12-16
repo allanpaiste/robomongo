@@ -26,9 +26,7 @@ configure_file(
 # Direct-tcpip sample
 add_library(ssh ssh.c log.c array.c)
 
-target_link_libraries(ssh
-    PUBLIC
-        libssh2)
+target_link_libraries(ssh PUBLIC libssh2)
 
 target_include_directories(ssh
     PUBLIC
@@ -36,25 +34,27 @@ target_include_directories(ssh
         ${CMAKE_SOURCE_DIR}/src)
 
 # Server
-add_executable(server server.c)
-
-target_link_libraries(server
-    PRIVATE
-        ssh)
-
-target_include_directories(server
-    PRIVATE
-        ${CMAKE_BINARY_DIR}/src
-        ${CMAKE_SOURCE_DIR}/src)
-
+#add_executable(server server.c)
+#
+#target_link_libraries(server
+#    PRIVATE
+#        ssh)
+#
+#target_link_libraries(server PUBLIC /usr/local/Cellar/openssl/1.0.2t/lib/libssl.dylib)
+#
+#target_include_directories(server
+#    PRIVATE
+#        ${CMAKE_BINARY_DIR}/src
+#        ${CMAKE_SOURCE_DIR}/src)
+#
 # Tests
-add_executable(ssh_test test.c)
+#add_executable(ssh_test test.c)
 
-target_link_libraries(ssh_test
-    PRIVATE
-        ssh)
+#target_link_libraries(ssh_test
+#    PRIVATE
+#        ssh)
 
-target_include_directories(ssh_test
-    PRIVATE
-        ${CMAKE_BINARY_DIR}/src
-        ${CMAKE_SOURCE_DIR}/src)
+#target_include_directories(ssh_test
+#    PRIVATE
+#        ${CMAKE_BINARY_DIR}/src
+#        ${CMAKE_SOURCE_DIR}/src)

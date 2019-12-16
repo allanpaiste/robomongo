@@ -1,3 +1,6 @@
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
 #include "robomongo/core/domain/App.h"
 #include <QHash>
 #include <QInputDialog>
@@ -144,7 +147,7 @@ namespace Robomongo
         ConnectionSettings *connection = collection->database()->server()->connectionRecord();
         auto const& dbname = collection->database()->name();
         connection->setDefaultDatabase(dbname);
-        QString const& script = detail::buildCollectionQuery(collection->name(), "find({})");
+        QString const& script = detail::buildCollectionQuery(collection->name(), "find({}).sort({_id:-1})");
         openShell(collection->database()->server(), connection, ScriptInfo(script, true, dbname, CursorPosition(0, -2),
                                                                            QtUtils::toQString(dbname), filePathToSave));
     }

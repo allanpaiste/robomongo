@@ -1,8 +1,14 @@
 #!/usr/bin/env bash
 
-BIN_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"       # Get directory of this file
-PROJECT_DIR=$(dirname $BIN_DIR)                                   # Get root directory of project
-source $BIN_DIR/common/setup $1
+FILE_PATH="$(pwd)/${BASH_SOURCE[0]}"
+BIN_DIR="$(cd "$(dirname "${FILE_PATH}")" && pwd)"
+PROJECT_DIR=$(dirname ${BIN_DIR})
 
-cd $BUILD_DIR
+echo "Bin: ${BIN_DIR}"
+echo "Project: ${PROJECT_DIR}"
+
+source ${BIN_DIR}/common/setup $1
+
+cd ${BUILD_DIR}
+
 cmake --build . --target install/strip "${@:2}"

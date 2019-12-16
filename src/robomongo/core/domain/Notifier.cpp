@@ -5,8 +5,11 @@
 
 #include <QAction>
 #include <QClipboard>
+#include <QString>
 #include <QApplication>
 #include <QMenu>
+#include <QStandardPaths>
+#include <third-party/qjson/sources/src/parser.h>
 
 #include "robomongo/core/domain/MongoShell.h"
 #include "robomongo/core/utils/QtUtils.h"
@@ -24,6 +27,10 @@
 #include "robomongo/gui/utils/DialogUtils.h"
 #include "robomongo/gui/GuiRegistry.h"
 #include "robomongo/core/EventBus.h"
+
+#include "robomongo/core/domain/MongoDatabase.h"
+#include "robomongo/core/domain/MongoCollection.h"
+#include "robomongo/core/domain/App.h"
 
 namespace Robomongo
 {
@@ -136,6 +143,9 @@ namespace Robomongo
         _copyTimestampAction = new QAction("Copy Timestamp from ObjectId", wid);
         VERIFY(connect(_copyTimestampAction, SIGNAL(triggered()), SLOT(onCopyTimestamp())));
 
+        _findReferredDocument = new QAction("Open Reference", wid);
+        VERIFY(connect(_findReferredDocument, SIGNAL(triggered()), SLOT(onFindReferredDocument())));
+
         _copyJsonAction = new QAction("Copy JSON", wid);
         VERIFY(connect(_copyJsonAction, SIGNAL(triggered()), SLOT(onCopyJson())));        
     }
@@ -160,6 +170,10 @@ namespace Robomongo
             isRoot = detail::isDocumentRoot(item);
         }
 
+        if (onItem && isObjectId && item->fieldName() != "_id") {
+            menu->addAction(_findReferredDocument);
+            if (onItem && isEditable) menu->addSeparator();
+        }
         if (onItem && isEditable) menu->addAction(_editDocumentAction);
         if (onItem)               menu->addAction(_viewDocumentAction);
         if (isEditable)           menu->addAction(_insertDocumentAction);
@@ -173,6 +187,7 @@ namespace Robomongo
             menu->addAction(_copyValuePathAction);
 
         if (onItem && isObjectId) menu->addAction(_copyTimestampAction);
+
         if (onItem && isDocument) menu->addAction(_copyJsonAction);
         if (onItem && isEditable) menu->addSeparator();
         if (onItem && isEditable) menu->addAction(_deleteDocumentAction);
@@ -457,6 +472,80 @@ namespace Robomongo
 
         QClipboard *clipboard = QApplication::clipboard();
         clipboard->setText(documentItem->value());
+    }
+
+    void Notifier::onFindReferredDocument()
+    {
+        this->onFindReferredDocument(_observer->selectedIndex());
+    }
+
+    void Notifier::onFindReferredDocument(const QModelIndex &index)
+    {
+        if (!index.isValid())
+            return;
+
+        BsonTreeItem *documentItem = QtUtils::item<BsonTreeItem*>(index);
+
+        if (!documentItem)
+            return;
+
+        if (!detail::isObjectIdType(documentItem))
+            return;
+
+        QString fieldName = QString::fromStdString(documentItem->fieldName());
+
+        if (fieldName == "_id")
+            return;
+
+        QString fieldValue = documentItem->value();
+
+        Robomongo::MongoNamespace ns = this->_queryInfo._info._ns;
+
+        std::string collectionName = ns.collectionName();
+        std::string databaseName = ns.databaseName();
+
+        std::string collectionNameTemplate = "%1collections";
+
+        QString fieldReference = fieldName.replace("_", "");
+
+        std::vector<std::string> references = {
+            QtUtils::toStdString(fieldReference),
+            collectionName + "." + QtUtils::toStdString(fieldReference)
+        };
+
+        auto const& settingsManager = Robomongo::AppRegistry::instance().settingsManager();
+
+        std::map<std::string, std::string> nameTemplates = settingsManager->tableRelations();
+
+        auto templateResolver = [nameTemplates, &collectionNameTemplate](const std::string& reference) {
+            if (!nameTemplates.count(reference)) {
+                return;
+            }
+
+            collectionNameTemplate = nameTemplates.find(reference)->second;
+        };
+
+        std::for_each (references.begin(), references.end(), templateResolver);
+
+        QString collectionRemote = QString(QString::fromStdString(collectionNameTemplate)).arg(fieldReference);
+
+        auto * database = new MongoDatabase(
+            this->_shell->server(),
+            databaseName
+        );
+
+        QString const& script = detail::buildCollectionQuery(
+            QtUtils::toStdString(collectionRemote),
+            QString("find({_id:%1})").arg(fieldValue)
+        );
+
+        AppRegistry::instance().app()->openShell(
+            database,
+            script,
+            true,
+            collectionRemote,
+            Robomongo::CursorPosition()
+        );
     }
 
     void Notifier::onCopyTimestamp()

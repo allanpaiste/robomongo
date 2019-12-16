@@ -14,6 +14,8 @@ namespace Robomongo
     {
         void applyStyle(const QString &styleName)
         {
+            QApplication::setStyle(new AppStyle);
+
             if (styleName == "Native") {
                 QApplication::setStyle(new AppStyle);
                 return;

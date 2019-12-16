@@ -24,7 +24,8 @@
  *    delete this exception statement from all source files in the program,
  *    then also delete it in the license file.
  */
-
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-result"
 #define MONGO_LOG_DEFAULT_COMPONENT ::mongo::logger::LogComponent::kDefault
 
 #include "robomongo/shell/bson/json.h"

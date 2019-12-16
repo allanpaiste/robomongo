@@ -502,7 +502,7 @@ namespace Robomongo
     void ExplorerCollectionTreeItem::ui_viewCollection()
     {
         CursorPosition cp(0, -2);
-        openCurrentCollectionShell("find({})", true, cp);
+        openCurrentCollectionShell("find({}).sort({_id:-1})", true, cp);
     }
 
     void ExplorerCollectionTreeItem::ui_storageSize()

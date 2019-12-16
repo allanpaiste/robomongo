@@ -9,6 +9,7 @@
 #include "robomongo/gui/GuiRegistry.h"
 #include "robomongo/gui/widgets/workarea/BsonTreeItem.h"
 #include "robomongo/gui/widgets/workarea/OutputWidget.h"
+#include "robomongo/core/domain/MongoDatabase.h"
 
 namespace Robomongo
 {
@@ -32,6 +33,10 @@ namespace Robomongo
         _collapseRecursive = new QAction(tr("Collapse Recursively"), this);
         _collapseRecursive->setShortcut(QKeySequence(Qt::ALT + Qt::Key_Left));
         VERIFY(connect(_collapseRecursive, SIGNAL(triggered()), SLOT(onCollapseRecursive())));
+
+        _onOpenRelated = new QAction(tr("Open Related"), this);
+        _onOpenRelated->setShortcut(QKeySequence(Qt::ControlModifier + Qt::Key_Down));
+        VERIFY(connect(_onOpenRelated, SIGNAL(triggered()), SLOT(onOpenRelated())));
 
         setStyleSheet("QTreeView { border-left: 1px solid #c7c5c4; border-top: 1px solid #c7c5c4; }");
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
@@ -104,6 +109,10 @@ namespace Robomongo
                 if (event->modifiers() & Qt::AltModifier)
                     this->onCollapseRecursive();
                 break;
+            case Qt::Key_Down:
+                if (event->modifiers() & Qt::ControlModifier)
+                    this->onOpenRelated();
+                break;
         }
 
         return BaseClass::keyPressEvent(event);
@@ -135,6 +144,11 @@ namespace Robomongo
                 }
             }
         }
+    }
+
+    void BsonTreeView::onOpenRelated()
+    {
+        this->_notifier.onFindReferredDocument();
     }
 
     void BsonTreeView::onExpandRecursive()
