@@ -170,6 +170,8 @@ namespace Robomongo
         _collectionSystemFolderItem->setText(0, "System");
         _collectionFolderItem->addChild(_collectionSystemFolderItem);
 
+        // @todo: tank - remove items that have been marked to be hidden
+
         for (int i = 0; i < collections.size(); ++i) {
             MongoCollection *collection = collections[i];
 

@@ -35,7 +35,7 @@ namespace Robomongo
     private Q_SLOTS:
         void ui_itemExpanded(QTreeWidgetItem *item);
         void ui_itemDoubleClicked(QTreeWidgetItem *item, int column);
-        void ui_searchTextChanged(const QString &newValue);
+        void ui_searchTextChanged(const QString &searchQuery);
 
     protected:
         virtual void keyPressEvent(QKeyEvent *event);   
@@ -47,5 +47,7 @@ namespace Robomongo
         QLabel *_progressLabel;
         QTreeWidget *_treeWidget;
         QLineEdit *_searchField;
+        QString _searchQuery;
+        bool _loading;
     };
 }
