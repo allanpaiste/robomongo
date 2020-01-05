@@ -10,7 +10,14 @@ echo "Project dir: ${PROJECT_DIR}"
 echo "Repos dir: ${REPOS_DIR}"
 
 # @todo: make sure this makes sense for both IDE and direct script run
-IDE_BUILD_TYPE="debug" # otherwise: opt?
+IDE_BUILD_TYPE="opt" # options: debug,opt
+
+if [ "${1}" == "debug" ] ; then
+    IDE_BUILD_TYPE="debug"
+fi
+
+# @todo: this line might mess things up for the IDE - so it might only be needed when building from shell
+cd ${BUILD_DIR}
 
 cmake \
   -D "CMAKE_PREFIX_PATH=${PREFIX_PATH}" \
