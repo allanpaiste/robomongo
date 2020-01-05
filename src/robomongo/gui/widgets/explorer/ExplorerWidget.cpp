@@ -17,28 +17,50 @@
 #include "robomongo/gui/widgets/explorer/ExplorerReplicaSetTreeItem.h"
 #include "robomongo/gui/widgets/explorer/ExplorerReplicaSetFolderItem.h"
 #include "robomongo/gui/widgets/explorer/ExplorerUserTreeItem.h"
+#include <QLineEdit>
+#include <QVBoxLayout>
+#include <QStandardItemModel>
+#include <QDebug>
+
 
 namespace Robomongo
 {
-
     ExplorerWidget::ExplorerWidget(MainWindow *parentMainWindow) : BaseClass(parentMainWindow),
         _progress(0)
     {
         _treeWidget = new ExplorerTreeWidget(this);
 
-        QHBoxLayout *vlaout = new QHBoxLayout();
-        vlaout->setMargin(0);
-        vlaout->addWidget(_treeWidget, Qt::AlignJustify);
+        _searchField = new QLineEdit;
+        _searchField->setPlaceholderText("Search...");
 
-        VERIFY(connect(_treeWidget, SIGNAL(itemExpanded(QTreeWidgetItem *)), this, SLOT(ui_itemExpanded(QTreeWidgetItem *))));
-        VERIFY(connect(_treeWidget, SIGNAL(itemDoubleClicked(QTreeWidgetItem *, int)), 
-                       this, SLOT(ui_itemDoubleClicked(QTreeWidgetItem *, int))));
+        QVBoxLayout* vLayout = new QVBoxLayout();
+        QHBoxLayout* topLayout = new QHBoxLayout();
+        QHBoxLayout* bottomLayout = new QHBoxLayout();
+
+        vLayout->addLayout(topLayout);
+        vLayout->addLayout(bottomLayout);
+
+        vLayout->setMargin(0);
+        topLayout->setMargin(0);
+        bottomLayout->setMargin(0);
+
+        topLayout->addWidget(_searchField);
+        bottomLayout->addWidget(_treeWidget);
+
+        VERIFY(connect(_treeWidget, SIGNAL(itemExpanded(QTreeWidgetItem *)),
+                this, SLOT(ui_itemExpanded(QTreeWidgetItem *))));
+
+        VERIFY(connect(_treeWidget, SIGNAL(itemDoubleClicked(QTreeWidgetItem *, int)),
+                this, SLOT(ui_itemDoubleClicked(QTreeWidgetItem *, int))));
+
+        VERIFY(connect(_searchField, SIGNAL(textChanged(const QString &)),
+                this, SLOT(ui_searchTextChanged(const QString &))));
 
         // Temporarily disabling export/import feature
         //VERIFY(connect(_treeWidget, SIGNAL(currentItemChanged(QTreeWidgetItem *, QTreeWidgetItem *)),
         //               parentMainWindow, SLOT(onExplorerItemSelected(QTreeWidgetItem *))));
 
-        setLayout(vlaout);
+        setLayout(vLayout);
 
         QMovie *movie = new QMovie(":robomongo/icons/loading.gif", QByteArray(), this);
         _progressLabel = new QLabel(this);
@@ -167,5 +189,34 @@ namespace Robomongo
 
         // Toggle expanded state
         item->setExpanded(!item->isExpanded());
+    }
+
+    void ExplorerWidget::ui_searchTextChanged(const QString & newValue)
+    {
+        QList<QTreeWidgetItem *> items = _treeWidget->findItems(
+                QString("*"),
+                Qt::MatchWrap | Qt::MatchWildcard | Qt::MatchRecursive
+        );
+
+        QList<QTreeWidgetItem *> matches = _treeWidget->findItems(
+                QString (newValue),
+                Qt::MatchContains | Qt::MatchRecursive
+        );
+
+        for (QTreeWidgetItem *item : items)
+        {
+            item->setHidden(!matches.contains(item));
+        }
+
+        for (QTreeWidgetItem *match : matches)
+        {
+            QTreeWidgetItem *parent = match->parent();
+
+            while (parent)
+            {
+                parent->setHidden(false);
+                parent = parent->parent();
+            }
+        }
     }
 }

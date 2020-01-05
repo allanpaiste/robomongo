@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QTreeView>
+#include <QPushButton>
 
 #include "robomongo/core/domain/Notifier.h"
 #include "robomongo/gui/widgets/workarea/OutputItemContentWidget.h"
@@ -30,7 +31,8 @@ namespace Robomongo
     protected:
         virtual void resizeEvent(QResizeEvent *event);
         virtual void keyPressEvent(QKeyEvent *event);
-        
+        void mouseDoubleClickEvent(QMouseEvent *event);
+
     private:
         Notifier _notifier;
         QAction *_expandRecursive;

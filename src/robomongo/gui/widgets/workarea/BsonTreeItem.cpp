@@ -1,5 +1,9 @@
 #include "robomongo/gui/widgets/workarea/BsonTreeItem.h"
 #include <mongo/client/dbclientinterface.h>
+#include <QMouseEvent>
+#include <QPushButton>
+#include <QDebug>
+#include <robomongo/core/utils/QtUtils.h>
 
 using namespace mongo;
 namespace
@@ -35,14 +39,12 @@ namespace Robomongo
     BsonTreeItem::BsonTreeItem(QObject *parent) 
         :BaseClass(parent)
     {
-       
     }
 
     BsonTreeItem::BsonTreeItem(const mongo::BSONObj &bsonObjRoot, QObject *parent)
         :BaseClass(parent),
         _root(bsonObjRoot)
     {
-
     }
 
     unsigned BsonTreeItem::childrenCount() const

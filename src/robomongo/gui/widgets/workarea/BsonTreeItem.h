@@ -4,6 +4,7 @@
 #include <QObject>
 #include <mongo/bson/bsonobj.h>
 #include <mongo/bson/bsonelement.h>
+#include <QPushButton>
 
 namespace Robomongo
 {
@@ -65,7 +66,6 @@ namespace Robomongo
         void setBinType(mongo::BinDataType type);
 
     protected:
-
         const mongo::BSONObj _root;
         ChildContainerType _items;
         BsonItemFields _fields;

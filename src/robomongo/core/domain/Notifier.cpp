@@ -10,6 +10,9 @@
 #include <QMenu>
 #include <QStandardPaths>
 #include <third-party/qjson/sources/src/parser.h>
+#include <QDesktopServices>
+#include <QUrl>
+
 
 #include "robomongo/core/domain/MongoShell.h"
 #include "robomongo/core/utils/QtUtils.h"
@@ -143,11 +146,11 @@ namespace Robomongo
         _copyTimestampAction = new QAction("Copy Timestamp from ObjectId", wid);
         VERIFY(connect(_copyTimestampAction, SIGNAL(triggered()), SLOT(onCopyTimestamp())));
 
+        _copyJsonAction = new QAction("Copy JSON", wid);
+        VERIFY(connect(_copyJsonAction, SIGNAL(triggered()), SLOT(onCopyJson())));
+
         _findReferredDocument = new QAction("Open Reference", wid);
         VERIFY(connect(_findReferredDocument, SIGNAL(triggered()), SLOT(onFindReferredDocument())));
-
-        _copyJsonAction = new QAction("Copy JSON", wid);
-        VERIFY(connect(_copyJsonAction, SIGNAL(triggered()), SLOT(onCopyJson())));        
     }
 
     void Notifier::initMenu(QMenu *const menu, BsonTreeItem *const item)
@@ -481,6 +484,9 @@ namespace Robomongo
 
     void Notifier::onFindReferredDocument(const QModelIndex &index)
     {
+        // @todo: tank tank - create services links based on this
+        // QDesktopServices::openUrl ( QUrl("http://www.google.com"));
+
         if (!index.isValid())
             return;
 

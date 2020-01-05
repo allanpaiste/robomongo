@@ -4,6 +4,8 @@
 #include <QAction>
 #include <QMenu>
 #include <QKeyEvent>
+#include <QPushButton>
+#include <QDebug>
 
 #include "robomongo/core/utils/QtUtils.h"
 #include "robomongo/gui/GuiRegistry.h"
@@ -29,7 +31,7 @@ namespace Robomongo
         _expandRecursive = new QAction("Expand Recursively", this);
         _expandRecursive->setShortcut(QKeySequence(Qt::ALT + Qt::Key_Right));
         VERIFY(connect(_expandRecursive, SIGNAL(triggered()), SLOT(onExpandRecursive())));
-        
+
         _collapseRecursive = new QAction(tr("Collapse Recursively"), this);
         _collapseRecursive->setShortcut(QKeySequence(Qt::ALT + Qt::Key_Left));
         VERIFY(connect(_collapseRecursive, SIGNAL(triggered()), SLOT(onCollapseRecursive())));
@@ -42,6 +44,19 @@ namespace Robomongo
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
         header()->setSectionResizeMode(QHeaderView::Interactive);
 #endif
+    }
+
+    void BsonTreeView::mouseDoubleClickEvent(QMouseEvent * event)
+    {
+        if (event->modifiers() == Qt::ControlModifier) {
+            auto clickedIndex = QTreeView::indexAt(event->pos());
+
+            this->_notifier.onFindReferredDocument(clickedIndex);
+
+            return;
+        }
+
+        return QTreeView::mousePressEvent(event);
     }
 
     void BsonTreeView::showContextMenu(const QPoint &point)

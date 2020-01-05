@@ -35,7 +35,7 @@ bin/pack
 
 After running bin/configure and bin/build ...
 
-Build, Execution, Deployment > CMake > Generation path => build/release
+`Build, Execution, Deployment > CMake > Generation path => build/release`
 
 Then use RMB anywhere in the file-tree and choose 'Reload CMake Project'.
 
@@ -44,3 +44,19 @@ the IDE.
 
 The best part about this is that you can run it with a debugger which helps a lot when you're learning how 
 to extend it. 
+
+# Debug mode 
+
+Good for development and exploration.
+
+```shell script
+bin/configure debug
+```
+
+After this, you should reload the project in IDE (click anywhere in the file-tree view and choose 'Reload CMake Project')
+
+You also have to rebuild robomongo-shell in debug mode.
+
+And change ...
+
+`Build, Execution, Deployment > CMake > Generation path => build/release` to build for debugging.

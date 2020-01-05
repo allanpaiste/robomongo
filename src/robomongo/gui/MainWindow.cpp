@@ -26,6 +26,7 @@
 #include <QNetworkReply>
 #include <QUrl>
 #include <QTextDocument>
+#include <QLineEdit>
 
 #include <mongo/logger/log_severity.h>
 #include "robomongo/core/settings/SettingsManager.h"
@@ -1268,6 +1269,16 @@ namespace Robomongo
 
     void MainWindow::createDatabaseExplorer()
     {
+//        QLineEdit *searchField = new QLineEdit;
+//        searchField->setPlaceholderText("Search Something");
+
+//        QDockWidget *searchDock = new QDockWidget;
+//        searchDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+//        searchDock->setWidget(searchField);
+//        searchDock->setFeatures(QDockWidget::NoDockWidgetFeatures);
+//
+//        addDockWidget(Qt::LeftDockWidgetArea, searchDock);
+
         _explorer = new ExplorerWidget(this);
         AppRegistry::instance().bus()->subscribe(_explorer, ConnectingEvent::Type);
         AppRegistry::instance().bus()->subscribe(_explorer, ConnectionFailedEvent::Type);
@@ -1296,6 +1307,13 @@ namespace Robomongo
         _viewMenu->addAction(actionExp);
 
         addDockWidget(Qt::LeftDockWidgetArea, explorerDock);
+
+
+
+
+
+
+
 
         LogWidget *log = new LogWidget(this);        
         VERIFY(connect(&Logger::instance(), SIGNAL(printed(const QString&, mongo::logger::LogSeverity)), log, SLOT(addMessage(const QString&, mongo::logger::LogSeverity))));
