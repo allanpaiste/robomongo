@@ -3,39 +3,49 @@ Bash fronted for CMake
 
 If you want to use this scripts, you need to set single environment variable:
 
-```shell script
+```shell
 brew install qt gcc cmake openssl
+
+OPENSSL_ROOT=/usr/local/Cellar/openssl/1.0.2t
 
 cp ${OPENSSL_ROOT}/lib/libssl.dylib ${OPENSSL_ROOT}/libssl.dylib
 cp ${OPENSSL_ROOT}/lib/libcrypto.dylib ${OPENSSL_ROOT}/libcrypto.dylib
-cp /usr/local/Cellar/openssl/1.0.2t/libssl.dylib /usr/local/Cellar/openssl/1.0.2t/libssl.1.0.0.dylib
-cp /usr/local/Cellar/openssl/1.0.2t/libcrypto.dylib /usr/local/Cellar/openssl/1.0.2t/libcrypto.1.0.0.dylib
+cp ${OPENSSL_ROOT}/libssl.dylib ${OPENSSL_ROOT}/libssl.1.0.0.dylib
+cp ${OPENSSL_ROOT}/libcrypto.dylib ${OPENSSL_ROOT}/libcrypto.1.0.0.dylib
 ```
 
-Build Robomongo:
+Configure Robomongo project (only one of these is needed but when working with the project, it's better to have 
+both release and debug configurations ready):
 
-```shell script
+```shell
 bin/configure
+bin/configure debug
+```
+
+Build Robomongo (release):
+
+```shell
 bin/build
 ```
 
 Install Robomongo:
 
-```shell script
+```shell
 bin/install
 ```
     
 Pack Robomongo:
 
-```shell script
+```shell
 bin/pack
 ```
 
 # IDE changes
 
-After running bin/configure and bin/build ...
+After running bin/configure:
 
-`Build, Execution, Deployment > CMake > Generation path => build/release`
+    Build, Execution, Deployment > CMake > Build Type => Release
+    Build, Execution, Deployment > CMake > Generation path => build/release
 
 Then use RMB anywhere in the file-tree and choose 'Reload CMake Project'.
 
@@ -47,16 +57,20 @@ to extend it.
 
 # Debug mode 
 
-Good for development and exploration.
+Good for development and exploration (otherwise IDE debug mode inspect is not very useful).
 
-```shell script
+IMPORTANT: You also have to rebuild robomongo-shell in debug mode! Build it before continuing.
+
+```shell
 bin/configure debug
 ```
 
 After this, you should reload the project in IDE (click anywhere in the file-tree view and choose 'Reload CMake Project')
 
-You also have to rebuild robomongo-shell in debug mode.
+IMPORTANT: You also have to rebuild robomongo-shell in debug mode!!
 
 And change ...
 
-`Build, Execution, Deployment > CMake > Generation path => build/release` to build for debugging.
+    Build, Execution, Deployment > CMake > Generation path => build/release
+    
+... to build for debugging.

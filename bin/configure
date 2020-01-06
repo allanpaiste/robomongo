@@ -4,6 +4,7 @@ FILE_PATH="$(pwd)/${BASH_SOURCE[0]}"
 BIN_DIR="$(cd "$(dirname "${FILE_PATH}")" && pwd)"
 
 source ${BIN_DIR}/common/setup ${1}
+source ${BIN_DIR}/common/config
 
 echo "Bin dir: ${BIN_DIR}"
 echo "Project dir: ${PROJECT_DIR}"
@@ -18,9 +19,11 @@ fi
 
 cd ${BUILD_DIR}
 
+export ROBOMONG_SHELL_ROOT="${REPOS_DIR}/robomongo-shell"
+
 cmake \
   -D "CMAKE_PREFIX_PATH=${PREFIX_PATH}" \
   -D "CMAKE_BUILD_TYPE=${BUILD_TYPE}" \
   -D "CMAKE_INSTALL_PREFIX=${INSTALL_PREFIX}" \
-  -D "CMAKE_PREFIX_PATH=/usr/local/Cellar/openssl/1.0.2t;${REPOS_DIR}/robomongo-shell;${REPOS_DIR}/robomongo-shell/build/${IDE_BUILD_TYPE}" \
+  -D "CMAKE_PREFIX_PATH=${OPENSSL_ROOT};${ROBOMONG_SHELL_ROOT};${ROBOMONG_SHELL_ROOT}/build/${IDE_BUILD_TYPE}" \
   "${@:2}" ${PROJECT_DIR}
