@@ -56,7 +56,7 @@ namespace Robomongo
             return;
         }
 
-        return QTreeView::mousePressEvent(event);
+        return QTreeView::mouseDoubleClickEvent(event);
     }
 
     void BsonTreeView::showContextMenu(const QPoint &point)
