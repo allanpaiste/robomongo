@@ -42,12 +42,25 @@ bin/pack
 
 # IDE changes
 
-After running bin/configure:
+Navigate to:
 
-    Build, Execution, Deployment > CMake > Build Type => Release
-    Build, Execution, Deployment > CMake > Generation path => build/release
+    Build, Execution, Deployment > CMake
+    
+Create two profiles as follows:
 
-Then use RMB anywhere in the file-tree and choose 'Reload CMake Project'.
+## Release:
+   
+With the following config: 
+    
+    Build Type => Release
+    Generation path => build/release
+    
+## Debug:
+
+    Build Type => Debug
+    Generation path => build/debug
+
+Save and then use RMB anywhere in the file-tree and choose 'Reload CMake Project'.
 
 Then the run configuration dropdown should be populated and you should be able to build and run Robomongo through 
 the IDE. 
@@ -55,7 +68,7 @@ the IDE.
 The best part about this is that you can run it with a debugger which helps a lot when you're learning how 
 to extend it. 
 
-# Debug mode 
+# Debug Mode 
 
 Good for development and exploration (otherwise IDE debug mode inspect is not very useful).
 
