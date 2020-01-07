@@ -178,9 +178,13 @@ namespace Robomongo
                     iServiceItems.next();
 
                     QString ref = QString("%1:%2").arg(iRemoteServices.key(), iServiceGroups.key());
-                    const QString& serviceName = QString("Service: %1").arg(iServiceItems.key());
 
-                    auto *action = new QAction(serviceName, wid);
+                    const QString& serviceName = iServiceItems.key();
+
+                    QString serviceLabel = QString("Service: %1")
+                            .arg(QString(iServiceItems.key()).replace(QRegExp("(-|_)"), " "));
+
+                    auto *action = new QAction(serviceLabel, wid);
 
                     action->setProperty("service_url", iServiceItems.value());
 
@@ -224,10 +228,52 @@ namespace Robomongo
         std::string collectionName = ns.collectionName();
         std::string connectionName = this->_shell->server()->connectionRecord()->connectionName();
 
-        QString serviceContextRef = QString("%1:%2").arg("*", QString::fromStdString(collectionName));
+
+
+
+
+
+        std::string databaseName = ns.databaseName();
+
+        auto const& settingsManager = Robomongo::AppRegistry::instance().settingsManager();
+        auto connectionAliases = settingsManager->connectionAliases();
+
+        /**
+         * Resolve alias group
+         */
+        QMapIterator<QString, QVariant> iConnectionAliases(connectionAliases);
+
+        QString connGroup;
+        QString connSubGroup;
+
+        while (iConnectionAliases.hasNext()) {
+            iConnectionAliases.next();
+
+            connGroup = iConnectionAliases.key();
+
+            auto aliasGroupItems = iConnectionAliases.value().toMap();
+
+            connSubGroup = aliasGroupItems.key(QString::fromStdString(connectionName), "");
+
+            if (connSubGroup.length()) {
+                break;
+            }
+        }
+
+        QStringList connGroups;
+
+        connGroups << QString("%1:%2").arg(connGroup, connSubGroup);
+        connGroups << QString("%1:*").arg(connGroup);
+        connGroups << "*";
 
         if (Robomongo::AppRegistry::instance().settingsManager()->featureFlags().contains("services")) {
-            if (_remoteServices.contains(serviceContextRef)) {
+            for (auto& connRef : connGroups) {
+                QString serviceContextRef = QString("%1:%2").arg(connRef, QString::fromStdString(collectionName));
+
+                if (!_remoteServices.contains(serviceContextRef)) {
+                    continue;
+                }
+
                 auto services = _remoteServices[serviceContextRef];
 
                 QMapIterator<QString, QAction*> iServices(services);
@@ -578,6 +624,10 @@ namespace Robomongo
 
             actionUrl = QString(actionUrl).replace(QString("{{%1}}").arg(name), value);
         }
+
+        const QString &tsUTC = QDateTime::currentDateTimeUtc().toString("yyyy-MM-ddTHH:mm:ss.zzzZ/0");
+
+        actionUrl = QString(actionUrl).replace(QString("{{__TS_UTC}}"), tsUTC);
 
         QDesktopServices::openUrl(QUrl(actionUrl));
     }
