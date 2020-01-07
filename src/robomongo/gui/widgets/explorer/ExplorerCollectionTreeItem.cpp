@@ -11,6 +11,7 @@
 #include "robomongo/gui/GuiRegistry.h"
 #include "robomongo/gui/utils/DialogUtils.h"
 
+#include "robomongo/core/settings/SettingsManager.h"
 #include "robomongo/core/settings/ConnectionSettings.h"
 #include "robomongo/core/domain/MongoCollection.h"
 #include "robomongo/core/domain/MongoServer.h"
@@ -502,7 +503,14 @@ namespace Robomongo
     void ExplorerCollectionTreeItem::ui_viewCollection()
     {
         CursorPosition cp(0, -2);
-        openCurrentCollectionShell("find({}).sort({_id:-1})", true, cp);
+
+        auto const& settingsManager = Robomongo::AppRegistry::instance().settingsManager();
+
+        auto queries = settingsManager->queries();
+
+        QString query = queries["*"].toMap()["*"].toString();
+
+        openCurrentCollectionShell(query, true, cp);
     }
 
     void ExplorerCollectionTreeItem::ui_storageSize()

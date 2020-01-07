@@ -75,8 +75,10 @@ namespace Robomongo
 
     std::vector<ConnectionSettings*> SettingsManager::_connections;
 
-    std::map<std::string, std::string> SettingsManager::_nameTemplates;
-    
+    QMap<QString, QVariant> SettingsManager::_collectionRelations;
+    QMap<QString, QVariant> SettingsManager::_connectionAliases;
+    QMap<QString, QVariant> SettingsManager::_queries;
+
     // Temporarily disabling Recent Connections feature
     // std::vector<RecentConnection> SettingsManager::_recentConnections;
 
@@ -278,18 +280,18 @@ namespace Robomongo
         }
 
         if (map.contains("relations")) {
-            _nameTemplates.clear();
+            _collectionRelations.clear();
+            _collectionRelations = map.value("relations").toMap();
+        }
 
-            QVariantList const& relationsList = map.value("relations").toList();
+        if (map.contains("connectionAliases")) {
+            _connectionAliases.clear();
+            _connectionAliases = map.value("connectionAliases").toMap();
+        }
 
-            for (auto const& item : relationsList) {
-                auto itemList = item.toList();
-
-                _nameTemplates.insert(_nameTemplates.end(), {
-                        itemList.at(0).toString().toStdString(),
-                        itemList.at(1).toString().toStdString()
-                });
-            }
+        if (map.contains("queries")) {
+            _queries.clear();
+            _queries = map.value("queries").toMap();
         }
 
         /* Temporarily disabling Recent Connections feature
@@ -393,20 +395,6 @@ namespace Robomongo
 
         map.insert("connections", list);
 
-        // 20. Save relations
-        QVariantList relationsList;
-
-        for (auto & _nameTemplate : _nameTemplates) {
-            QStringList relation;
-
-            relation.append(QString::fromStdString(_nameTemplate.first));
-            relation.append(QString::fromStdString(_nameTemplate.second));
-
-            relationsList.insert(relationsList.size(), relation);
-        }
-
-        map.insert("relations", relationsList);
-
         /* Temporarily disabling Recent Connections feature
         // 13. Save recent connections
         QVariantList recentConnsList;
@@ -418,6 +406,15 @@ namespace Robomongo
         }
         map.insert("recentConnections", recentConnsList);
         */
+
+        // 20. Save relations
+        map.insert("relations", _collectionRelations);
+
+        // 21. Save connection aliases
+        map.insert("connectionAliases", _connectionAliases);
+
+        // 22. Save queries
+        map.insert("queries", _queries);
 
         map.insert("autoExec", _autoExec);
         map.insert("minimizeToTray", _minimizeToTray);
@@ -557,6 +554,19 @@ namespace Robomongo
         }
 
         LOG_MSG("Failed to find connection settings object by UUID.", mongo::logger::LogSeverity::Warning());
+        return nullptr;
+    }
+
+    ConnectionSettings* SettingsManager::getConnectionSettingsByName(QString const& name) const
+    {
+        const auto lookupName = name.toStdString();
+
+        for (auto const connSettings : _connections){
+            if (connSettings->connectionName() == lookupName)
+                return connSettings;
+        }
+
+        LOG_MSG("Failed to find connection settings object by name.", mongo::logger::LogSeverity::Warning());
         return nullptr;
     }
 

@@ -12,6 +12,7 @@
 #include <third-party/qjson/sources/src/parser.h>
 #include <QDesktopServices>
 #include <QUrl>
+#include <QTime>
 
 
 #include "robomongo/core/domain/MongoShell.h"
@@ -510,48 +511,125 @@ namespace Robomongo
         std::string collectionName = ns.collectionName();
         std::string databaseName = ns.databaseName();
 
-        std::string collectionNameTemplate = "%1collections";
+        std::string connectionName = this->_shell->server()->connectionRecord()->connectionName();
+
+        QString collectionNameTemplate = "%1collections";
 
         QString fieldReference = fieldName.replace("_", "");
 
-        std::vector<std::string> references = {
-            QtUtils::toStdString(fieldReference),
-            collectionName + "." + QtUtils::toStdString(fieldReference)
-        };
+        QStringList references;
+
+        references << QString("%1.%2").arg(QString::fromStdString(collectionName), fieldReference);
+        references << fieldReference;
 
         auto const& settingsManager = Robomongo::AppRegistry::instance().settingsManager();
 
-        std::map<std::string, std::string> nameTemplates = settingsManager->tableRelations();
+        auto nameTemplates = settingsManager->collectionRelations();
+        auto connectionAliases = settingsManager->connectionAliases();
 
-        auto templateResolver = [nameTemplates, &collectionNameTemplate](const std::string& reference) {
-            if (!nameTemplates.count(reference)) {
-                return;
+        /**
+         * Resolve alias group
+         */
+        QMapIterator<QString, QVariant> iConnectionAliases(connectionAliases);
+
+        QString connGroup;
+        QString connSubGroup;
+
+        while (iConnectionAliases.hasNext()) {
+            iConnectionAliases.next();
+
+            connGroup = iConnectionAliases.key();
+
+            auto aliasGroupItems = iConnectionAliases.value().toMap();
+
+            connSubGroup = aliasGroupItems.key(QString::fromStdString(connectionName), "");
+
+            if (connSubGroup.length()) {
+                break;
             }
+        }
 
-            collectionNameTemplate = nameTemplates.find(reference)->second;
-        };
+        QStringList connGroups;
 
-        std::for_each (references.begin(), references.end(), templateResolver);
+        connGroups << QString("%1:%2").arg(connGroup, connSubGroup);
+        connGroups << QString("%1:*").arg(connGroup);
+        connGroups << "*";
 
-        QString collectionRemote = QString(QString::fromStdString(collectionNameTemplate)).arg(fieldReference);
+        [&] {
+            for (auto& conn : connGroups) {
+                auto items = nameTemplates[conn].toMap();
 
-        auto * database = new MongoDatabase(
-            this->_shell->server(),
-            databaseName
-        );
+                for (auto& ref : references) {
+                    if (!nameTemplates.contains(conn)) {
+                        continue;
+                    }
+
+                    if (!items.contains(ref)) {
+                        continue;
+                    }
+
+                    collectionNameTemplate = items[ref].toString();
+
+                    return;
+                }
+            }
+        }();
+
+        QString collectionTarget = QString(collectionNameTemplate).arg(fieldReference);
+
+        QString remoteConnSubGroup = connSubGroup;
+
+        if (collectionTarget.split(":").length() > 1) {
+            QStringList fieldReferenceParts = collectionTarget.split(":");
+
+            connSubGroup = fieldReferenceParts.takeFirst();
+            collectionTarget = fieldReferenceParts.takeLast();
+        }
+
+        QString remoteConnName = connectionAliases[connGroup].toMap()[connSubGroup].toString();
 
         QString const& script = detail::buildCollectionQuery(
-            QtUtils::toStdString(collectionRemote),
-            QString("find({_id:%1})").arg(fieldValue)
+                QtUtils::toStdString(collectionTarget),
+                QString("find({_id:%1})").arg(fieldValue)
         );
 
-        AppRegistry::instance().app()->openShell(
-            database,
-            script,
-            true,
-            collectionRemote,
-            Robomongo::CursorPosition()
-        );
+        auto connServer = this->_shell->server();
+
+        auto app = AppRegistry::instance().app();
+
+        if (remoteConnName.compare(QString::fromStdString(connectionName)) != 0) {
+            auto connSettings = settingsManager->getConnectionSettingsByName(remoteConnName);
+
+            if (connSettings) {
+                auto resolveServer = [&app](const QString& name) -> MongoServer* {
+                    for (auto server : app->getServers()) {
+                        if (server->connectionRecord()->connectionName() != name.toStdString()) {
+                            continue;
+                        }
+
+                        return server;
+                    }
+
+                    return nullptr;
+                };
+
+                connServer = resolveServer(remoteConnName);
+
+                if (!connServer) {
+                    app->openServer(connSettings,Robomongo::ConnectionType::ConnectionPrimary);
+                }
+
+                connServer = resolveServer(remoteConnName);
+
+                while (!connServer->isConnected()) {
+                    QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
+                }
+            }
+        }
+
+        auto * database = new MongoDatabase(connServer, databaseName);
+
+        app->openShell(database, script,true, collectionTarget,Robomongo::CursorPosition());
     }
 
     void Notifier::onCopyTimestamp()

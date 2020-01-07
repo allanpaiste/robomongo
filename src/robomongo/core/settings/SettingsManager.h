@@ -115,6 +115,7 @@ namespace Robomongo
         */
         ConnectionSettings* getConnectionSettingsByUuid(QString const& uuid) const;
         ConnectionSettings* getConnectionSettingsByUuid(std::string const& uuid) const;
+        ConnectionSettings* getConnectionSettingsByName(QString const& name) const;
 
         void reorderConnections(const ConnectionSettingsContainerType &connections);
 
@@ -202,8 +203,9 @@ namespace Robomongo
 
         bool useHttps() const { return _useHttps; }
 
-        std::map<std::string, std::string> tableRelations() const { return _nameTemplates; }
-
+        QMap<QString, QVariant> collectionRelations() const { return _collectionRelations; }
+        QMap<QString, QVariant> connectionAliases() const { return _connectionAliases; }
+        QMap<QString, QVariant> queries() const { return _queries; }
 
         void setUseHttps(bool status) { _useHttps = status; }
 
@@ -294,6 +296,9 @@ namespace Robomongo
         // List of config. file absolute paths of old versions
         // Must be updated with care and with every new version. Details on cpp file.       
         static std::vector<QString> const _configFilesOfOldVersions;
-        static std::map<std::string, std::string> _nameTemplates;
+
+        static QMap<QString, QVariant> _collectionRelations;
+        static QMap<QString, QVariant> _connectionAliases;
+        static QMap<QString, QVariant> _queries;
     };
 }

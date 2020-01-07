@@ -18,6 +18,9 @@
 #include "robomongo/core/utils/StdUtils.h"
 #include "robomongo/core/utils/Logger.h"
 
+#include "robomongo/core/AppRegistry.h"
+#include "robomongo/core/settings/SettingsManager.h"
+
 namespace Robomongo
 {
     namespace detail
@@ -147,7 +150,14 @@ namespace Robomongo
         ConnectionSettings *connection = collection->database()->server()->connectionRecord();
         auto const& dbname = collection->database()->name();
         connection->setDefaultDatabase(dbname);
-        QString const& script = detail::buildCollectionQuery(collection->name(), "find({}).sort({_id:-1})");
+
+        auto const& settingsManager = AppRegistry::instance().settingsManager();
+
+        auto queries = settingsManager->queries();
+
+        QString query = queries["*"].toMap()["*"].toString();
+
+        QString const& script = detail::buildCollectionQuery(collection->name(), query);
         openShell(collection->database()->server(), connection, ScriptInfo(script, true, dbname, CursorPosition(0, -2),
                                                                            QtUtils::toQString(dbname), filePathToSave));
     }
