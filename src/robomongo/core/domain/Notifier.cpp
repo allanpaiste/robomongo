@@ -185,6 +185,9 @@ namespace Robomongo
                     const QString& serviceName = QString("Service: %1").arg(iServiceItems.key());
 
                     auto *action = new QAction(serviceName, wid);
+
+                    action->setProperty("service_url", iServiceItems.value());
+
                     VERIFY(connect(action, SIGNAL(triggered()), SLOT(onOpenRemoteService())));
 
                     _remoteServices[contextRef][serviceName] = action;
@@ -550,21 +553,37 @@ namespace Robomongo
 
     void Notifier::onOpenRemoteService()
     {
+        auto *action = dynamic_cast<QAction*>(QObject::sender());
+        QString actionUrl = action->property("service_url").toString();
+
         const QModelIndex &index = _observer->selectedIndex();
 
         if (!index.isValid())
             return;
 
-        BsonTreeItem *documentItem = QtUtils::item<BsonTreeItem*>(index);
+        auto *documentItem = QtUtils::item<BsonTreeItem*>(index);
 
-        if (!detail::isObjectIdType(documentItem))
+        if (!documentItem->root().hasField("_id")) {
             return;
+        }
 
-        QString fieldValue = documentItem->value();
-        QString serviceUrl = QString("https://panel.starship.xyz/marketplace/serviceareas/%1")
-                .arg(fieldValue.replace("ObjectId(\"", "").replace("\")", ""));
+        auto *parent = dynamic_cast<BsonTreeItem*>(documentItem->parent());
 
-        QDesktopServices::openUrl ( QUrl(serviceUrl));
+        for (auto *child: parent->children()) {
+            auto *item = dynamic_cast<BsonTreeItem*>(child);
+            QString value = item->value();
+            QString name = QString::fromStdString(item->fieldName());
+
+            if (detail::isObjectIdType(item)) {
+                value = value.replace("ObjectId(", "")
+                        .replace(")", "")
+                        .replace(QRegExp("(\"|')"), "");
+            }
+
+            actionUrl = QString(actionUrl).replace(QString("{{%1}}").arg(name), value);
+        }
+
+        QDesktopServices::openUrl(QUrl(actionUrl));
     }
 
     void Notifier::onFindReferredDocument(const QModelIndex &index)
