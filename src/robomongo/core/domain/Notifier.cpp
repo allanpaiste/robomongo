@@ -152,6 +152,45 @@ namespace Robomongo
 
         _findReferredDocument = new QAction("Open Reference", wid);
         VERIFY(connect(_findReferredDocument, SIGNAL(triggered()), SLOT(onFindReferredDocument())));
+
+        auto settingsManager = Robomongo::AppRegistry::instance().settingsManager();
+        auto remoteServices = settingsManager->remoteServices();
+
+        QMapIterator<QString, QVariant> iRemoteServices(remoteServices);
+
+        QString connGroup;
+        QString connSubGroup;
+
+        while (iRemoteServices.hasNext()) {
+            iRemoteServices.next();
+
+            auto serviceGroups = iRemoteServices.value().toMap();
+
+            QMapIterator<QString, QVariant> iServiceGroups(serviceGroups);
+
+            while (iServiceGroups.hasNext()) {
+                iServiceGroups.next();
+
+                auto serviceItems = iServiceGroups.value().toMap();
+
+                QMapIterator<QString, QVariant> iServiceItems(serviceItems);
+
+                QString contextRef = QString("%1:%2").arg(iRemoteServices.key(), iServiceGroups.key());
+
+                while (iServiceItems.hasNext()) {
+                    iServiceItems.next();
+
+                    QString ref = QString("%1:%2").arg(iRemoteServices.key(), iServiceGroups.key());
+
+                    const QString& serviceName = QString("Service: %1").arg(iServiceItems.key());
+
+                    auto *action = new QAction(serviceName, wid);
+                    VERIFY(connect(action, SIGNAL(triggered()), SLOT(onOpenRemoteService())));
+
+                    _remoteServices[contextRef][serviceName] = action;
+                }
+            }
+        }
     }
 
     void Notifier::initMenu(QMenu *const menu, BsonTreeItem *const item)
@@ -174,10 +213,36 @@ namespace Robomongo
             isRoot = detail::isDocumentRoot(item);
         }
 
-        if (onItem && isObjectId && item->fieldName() != "_id") {
-            menu->addAction(_findReferredDocument);
-            if (onItem && isEditable) menu->addSeparator();
+        if (Robomongo::AppRegistry::instance().settingsManager()->featureFlags().contains("references")) {
+            if (onItem && isObjectId && item->fieldName() != "_id") {
+                menu->addAction(_findReferredDocument);
+                if (onItem && isEditable) menu->addSeparator();
+            }
         }
+
+        Robomongo::MongoNamespace ns = this->_queryInfo._info._ns;
+
+        std::string collectionName = ns.collectionName();
+        std::string connectionName = this->_shell->server()->connectionRecord()->connectionName();
+
+        QString serviceContextRef = QString("%1:%2").arg("*", QString::fromStdString(collectionName));
+
+        if (Robomongo::AppRegistry::instance().settingsManager()->featureFlags().contains("services")) {
+            if (_remoteServices.contains(serviceContextRef)) {
+                auto services = _remoteServices[serviceContextRef];
+
+                QMapIterator<QString, QAction*> iServices(services);
+
+                while (iServices.hasNext()) {
+                    iServices.next();
+
+                    menu->addAction(iServices.value());
+                }
+
+                if (onItem && isEditable) menu->addSeparator();
+            }
+        }
+
         if (onItem && isEditable) menu->addAction(_editDocumentAction);
         if (onItem)               menu->addAction(_viewDocumentAction);
         if (isEditable)           menu->addAction(_insertDocumentAction);
@@ -483,11 +548,27 @@ namespace Robomongo
         this->onFindReferredDocument(_observer->selectedIndex());
     }
 
+    void Notifier::onOpenRemoteService()
+    {
+        const QModelIndex &index = _observer->selectedIndex();
+
+        if (!index.isValid())
+            return;
+
+        BsonTreeItem *documentItem = QtUtils::item<BsonTreeItem*>(index);
+
+        if (!detail::isObjectIdType(documentItem))
+            return;
+
+        QString fieldValue = documentItem->value();
+        QString serviceUrl = QString("https://panel.starship.xyz/marketplace/serviceareas/%1")
+                .arg(fieldValue.replace("ObjectId(\"", "").replace("\")", ""));
+
+        QDesktopServices::openUrl ( QUrl(serviceUrl));
+    }
+
     void Notifier::onFindReferredDocument(const QModelIndex &index)
     {
-        // @todo: tank tank - create services links based on this
-        // QDesktopServices::openUrl ( QUrl("http://www.google.com"));
-
         if (!index.isValid())
             return;
 

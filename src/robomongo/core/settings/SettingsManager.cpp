@@ -78,6 +78,8 @@ namespace Robomongo
     QMap<QString, QVariant> SettingsManager::_collectionRelations;
     QMap<QString, QVariant> SettingsManager::_connectionAliases;
     QMap<QString, QVariant> SettingsManager::_queries;
+    QMap<QString, QVariant> SettingsManager::_remoteServices;
+    QMap<QString, QVariant> SettingsManager::_featureFlags;
 
     // Temporarily disabling Recent Connections feature
     // std::vector<RecentConnection> SettingsManager::_recentConnections;
@@ -289,6 +291,16 @@ namespace Robomongo
             _connectionAliases = map.value("connectionAliases").toMap();
         }
 
+        if (map.contains("featureFlags")) {
+            _featureFlags.clear();
+            _featureFlags = map.value("featureFlags").toMap();
+        }
+
+        if (map.contains("remoteServices")) {
+            _remoteServices.clear();
+            _remoteServices = map.value("remoteServices").toMap();
+        }
+
         if (map.contains("queries")) {
             _queries.clear();
             _queries = map.value("queries").toMap();
@@ -415,6 +427,13 @@ namespace Robomongo
 
         // 22. Save queries
         map.insert("queries", _queries);
+
+        // 23. Remote services
+        map.insert("remoteServices", _remoteServices);
+
+        // 24. Save connection aliases
+        map.insert("featureFlags", _featureFlags);
+
 
         map.insert("autoExec", _autoExec);
         map.insert("minimizeToTray", _minimizeToTray);

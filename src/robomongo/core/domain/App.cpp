@@ -155,7 +155,15 @@ namespace Robomongo
 
         auto queries = settingsManager->queries();
 
-        QString query = queries["*"].toMap()["*"].toString();
+        QString query;
+
+        if (Robomongo::AppRegistry::instance().settingsManager()->featureFlags().contains("queries")) {
+            query = queries["*"].toMap()["*"].toString();
+        } else {
+            query = "find({})";
+        }
+
+
 
         QString const& script = detail::buildCollectionQuery(collection->name(), query);
         openShell(collection->database()->server(), connection, ScriptInfo(script, true, dbname, CursorPosition(0, -2),

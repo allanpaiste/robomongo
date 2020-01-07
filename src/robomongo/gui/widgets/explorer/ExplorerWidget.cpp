@@ -8,6 +8,7 @@
 #include "robomongo/core/AppRegistry.h"
 #include "robomongo/core/domain/App.h"
 #include "robomongo/core/utils/QtUtils.h"
+#include "robomongo/core/settings/SettingsManager.h"
 
 #include "robomongo/gui/MainWindow.h"
 #include "robomongo/gui/widgets/explorer/ExplorerTreeWidget.h"
@@ -37,7 +38,10 @@ namespace Robomongo
         QHBoxLayout* topLayout = new QHBoxLayout();
         QHBoxLayout* bottomLayout = new QHBoxLayout();
 
-        vLayout->addLayout(topLayout);
+        if (Robomongo::AppRegistry::instance().settingsManager()->featureFlags().contains("search")) {
+            vLayout->addLayout(topLayout);
+        }
+
         vLayout->addLayout(bottomLayout);
 
         vLayout->setMargin(0);

@@ -205,6 +205,8 @@ namespace Robomongo
 
         QMap<QString, QVariant> collectionRelations() const { return _collectionRelations; }
         QMap<QString, QVariant> connectionAliases() const { return _connectionAliases; }
+        QMap<QString, QVariant> featureFlags() const { return _featureFlags; }
+        QMap<QString, QVariant> remoteServices() const { return _remoteServices; }
         QMap<QString, QVariant> queries() const { return _queries; }
 
         void setUseHttps(bool status) { _useHttps = status; }
@@ -299,6 +301,8 @@ namespace Robomongo
 
         static QMap<QString, QVariant> _collectionRelations;
         static QMap<QString, QVariant> _connectionAliases;
+        static QMap<QString, QVariant> _featureFlags;
+        static QMap<QString, QVariant> _remoteServices;
         static QMap<QString, QVariant> _queries;
     };
 }
