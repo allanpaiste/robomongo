@@ -5,8 +5,15 @@
 
 #include <QAction>
 #include <QClipboard>
+#include <QString>
 #include <QApplication>
 #include <QMenu>
+#include <QStandardPaths>
+#include <third-party/qjson/sources/src/parser.h>
+#include <QDesktopServices>
+#include <QUrl>
+#include <QTime>
+
 
 #include "robomongo/core/domain/MongoShell.h"
 #include "robomongo/core/utils/QtUtils.h"
@@ -24,6 +31,10 @@
 #include "robomongo/gui/utils/DialogUtils.h"
 #include "robomongo/gui/GuiRegistry.h"
 #include "robomongo/core/EventBus.h"
+
+#include "robomongo/core/domain/MongoDatabase.h"
+#include "robomongo/core/domain/MongoCollection.h"
+#include "robomongo/core/domain/App.h"
 
 namespace Robomongo
 {
@@ -137,7 +148,52 @@ namespace Robomongo
         VERIFY(connect(_copyTimestampAction, SIGNAL(triggered()), SLOT(onCopyTimestamp())));
 
         _copyJsonAction = new QAction("Copy JSON", wid);
-        VERIFY(connect(_copyJsonAction, SIGNAL(triggered()), SLOT(onCopyJson())));        
+        VERIFY(connect(_copyJsonAction, SIGNAL(triggered()), SLOT(onCopyJson())));
+
+        _findReferredDocument = new QAction("Open Reference", wid);
+        VERIFY(connect(_findReferredDocument, SIGNAL(triggered()), SLOT(onFindReferredDocument())));
+
+        auto settingsManager = Robomongo::AppRegistry::instance().settingsManager();
+        auto remoteServices = settingsManager->remoteServices();
+
+        QMapIterator<QString, QVariant> iRemoteServices(remoteServices);
+
+        QString connGroup;
+        QString connSubGroup;
+
+        while (iRemoteServices.hasNext()) {
+            iRemoteServices.next();
+
+            auto serviceGroups = iRemoteServices.value().toMap();
+            QMapIterator<QString, QVariant> iServiceGroups(serviceGroups);
+
+            while (iServiceGroups.hasNext()) {
+                iServiceGroups.next();
+
+                auto serviceItems = iServiceGroups.value().toMap();
+                QMapIterator<QString, QVariant> iServiceItems(serviceItems);
+                QString contextRef = QString("%1:%2").arg(iRemoteServices.key(), iServiceGroups.key());
+
+                while (iServiceItems.hasNext()) {
+                    iServiceItems.next();
+
+                    QString ref = QString("%1:%2").arg(iRemoteServices.key(), iServiceGroups.key());
+
+                    const QString& serviceName = iServiceItems.key();
+
+                    QString serviceLabel = QString("Service: %1")
+                            .arg(QString(iServiceItems.key()).replace(QRegExp("(-|_)"), " "));
+
+                    auto *action = new QAction(serviceLabel, wid);
+
+                    action->setProperty("service_url", iServiceItems.value());
+
+                    VERIFY(connect(action, SIGNAL(triggered()), SLOT(onOpenRemoteService())));
+
+                    _remoteServices[contextRef][serviceName] = action;
+                }
+            }
+        }
     }
 
     void Notifier::initMenu(QMenu *const menu, BsonTreeItem *const item)
@@ -160,6 +216,78 @@ namespace Robomongo
             isRoot = detail::isDocumentRoot(item);
         }
 
+        if (Robomongo::AppRegistry::instance().settingsManager()->featureFlags().contains("references")) {
+            if (onItem && isObjectId && item->fieldName() != "_id") {
+                menu->addAction(_findReferredDocument);
+                if (onItem && isEditable) menu->addSeparator();
+            }
+        }
+
+        Robomongo::MongoNamespace ns = this->_queryInfo._info._ns;
+
+        std::string collectionName = ns.collectionName();
+        std::string connectionName = this->_shell->server()->connectionRecord()->connectionName();
+
+
+
+
+
+
+        std::string databaseName = ns.databaseName();
+
+        auto const& settingsManager = Robomongo::AppRegistry::instance().settingsManager();
+        auto connectionAliases = settingsManager->connectionAliases();
+
+        /**
+         * Resolve alias group
+         */
+        QMapIterator<QString, QVariant> iConnectionAliases(connectionAliases);
+
+        QString connGroup;
+        QString connSubGroup;
+
+        while (iConnectionAliases.hasNext()) {
+            iConnectionAliases.next();
+
+            connGroup = iConnectionAliases.key();
+
+            auto aliasGroupItems = iConnectionAliases.value().toMap();
+
+            connSubGroup = aliasGroupItems.key(QString::fromStdString(connectionName), "");
+
+            if (connSubGroup.length()) {
+                break;
+            }
+        }
+
+        QStringList connGroups;
+
+        connGroups << QString("%1:%2").arg(connGroup, connSubGroup);
+        connGroups << QString("%1:*").arg(connGroup);
+        connGroups << "*";
+
+        if (Robomongo::AppRegistry::instance().settingsManager()->featureFlags().contains("services")) {
+            for (auto& connRef : connGroups) {
+                QString serviceContextRef = QString("%1:%2").arg(connRef, QString::fromStdString(collectionName));
+
+                if (!_remoteServices.contains(serviceContextRef)) {
+                    continue;
+                }
+
+                auto services = _remoteServices[serviceContextRef];
+
+                QMapIterator<QString, QAction*> iServices(services);
+
+                while (iServices.hasNext()) {
+                    iServices.next();
+
+                    menu->addAction(iServices.value());
+                }
+
+                if (onItem && isEditable) menu->addSeparator();
+            }
+        }
+
         if (onItem && isEditable) menu->addAction(_editDocumentAction);
         if (onItem)               menu->addAction(_viewDocumentAction);
         if (isEditable)           menu->addAction(_insertDocumentAction);
@@ -173,6 +301,7 @@ namespace Robomongo
             menu->addAction(_copyValuePathAction);
 
         if (onItem && isObjectId) menu->addAction(_copyTimestampAction);
+
         if (onItem && isDocument) menu->addAction(_copyJsonAction);
         if (onItem && isEditable) menu->addSeparator();
         if (onItem && isEditable) menu->addAction(_deleteDocumentAction);
@@ -457,6 +586,196 @@ namespace Robomongo
 
         QClipboard *clipboard = QApplication::clipboard();
         clipboard->setText(documentItem->value());
+    }
+
+    void Notifier::onFindReferredDocument()
+    {
+        this->onFindReferredDocument(_observer->selectedIndex());
+    }
+
+    void Notifier::onOpenRemoteService()
+    {
+        auto *action = dynamic_cast<QAction*>(QObject::sender());
+        QString actionUrl = action->property("service_url").toString();
+
+        const QModelIndex &index = _observer->selectedIndex();
+
+        if (!index.isValid())
+            return;
+
+        auto *documentItem = QtUtils::item<BsonTreeItem*>(index);
+
+        if (!documentItem->root().hasField("_id")) {
+            return;
+        }
+
+        auto *parent = dynamic_cast<BsonTreeItem*>(documentItem->parent());
+
+        for (auto *child: parent->children()) {
+            auto *item = dynamic_cast<BsonTreeItem*>(child);
+            QString value = item->value();
+            QString name = QString::fromStdString(item->fieldName());
+
+            if (detail::isObjectIdType(item)) {
+                value = value.replace("ObjectId(", "")
+                        .replace(")", "")
+                        .replace(QRegExp("(\"|')"), "");
+            }
+
+            actionUrl = QString(actionUrl).replace(QString("{{%1}}").arg(name), value);
+        }
+
+        const QString &tsUTC = QDateTime::currentDateTimeUtc().toString("yyyy-MM-ddTHH:mm:ss.zzzZ/0");
+
+        actionUrl = QString(actionUrl).replace(QString("{{__TS_UTC}}"), tsUTC);
+
+        QDesktopServices::openUrl(QUrl(actionUrl));
+    }
+
+    void Notifier::onFindReferredDocument(const QModelIndex &index)
+    {
+        if (!index.isValid())
+            return;
+
+        BsonTreeItem *documentItem = QtUtils::item<BsonTreeItem*>(index);
+
+        if (!documentItem)
+            return;
+
+        if (!detail::isObjectIdType(documentItem))
+            return;
+
+        QString fieldName = QString::fromStdString(documentItem->fieldName());
+
+        if (fieldName == "_id")
+            return;
+
+        QString fieldValue = documentItem->value();
+
+        Robomongo::MongoNamespace ns = this->_queryInfo._info._ns;
+
+        std::string collectionName = ns.collectionName();
+        std::string databaseName = ns.databaseName();
+
+        std::string connectionName = this->_shell->server()->connectionRecord()->connectionName();
+
+        QString collectionNameTemplate = "%1collections";
+
+        QString fieldReference = fieldName.replace("_", "");
+
+        QStringList references;
+
+        references << QString("%1.%2").arg(QString::fromStdString(collectionName), fieldReference);
+        references << fieldReference;
+
+        auto const& settingsManager = Robomongo::AppRegistry::instance().settingsManager();
+
+        auto nameTemplates = settingsManager->collectionRelations();
+        auto connectionAliases = settingsManager->connectionAliases();
+
+        /**
+         * Resolve alias group
+         */
+        QMapIterator<QString, QVariant> iConnectionAliases(connectionAliases);
+
+        QString connGroup;
+        QString connSubGroup;
+
+        while (iConnectionAliases.hasNext()) {
+            iConnectionAliases.next();
+
+            connGroup = iConnectionAliases.key();
+
+            auto aliasGroupItems = iConnectionAliases.value().toMap();
+
+            connSubGroup = aliasGroupItems.key(QString::fromStdString(connectionName), "");
+
+            if (connSubGroup.length()) {
+                break;
+            }
+        }
+
+        QStringList connGroups;
+
+        connGroups << QString("%1:%2").arg(connGroup, connSubGroup);
+        connGroups << QString("%1:*").arg(connGroup);
+        connGroups << "*";
+
+        [&] {
+            for (auto& conn : connGroups) {
+                auto items = nameTemplates[conn].toMap();
+
+                for (auto& ref : references) {
+                    if (!nameTemplates.contains(conn)) {
+                        continue;
+                    }
+
+                    if (!items.contains(ref)) {
+                        continue;
+                    }
+
+                    collectionNameTemplate = items[ref].toString();
+
+                    return;
+                }
+            }
+        }();
+
+        QString collectionTarget = QString(collectionNameTemplate).arg(fieldReference);
+
+        QString remoteConnSubGroup = connSubGroup;
+
+        if (collectionTarget.split(":").length() > 1) {
+            QStringList fieldReferenceParts = collectionTarget.split(":");
+
+            connSubGroup = fieldReferenceParts.takeFirst();
+            collectionTarget = fieldReferenceParts.takeLast();
+        }
+
+        QString remoteConnName = connectionAliases[connGroup].toMap()[connSubGroup].toString();
+
+        QString const& script = detail::buildCollectionQuery(
+                QtUtils::toStdString(collectionTarget),
+                QString("find({_id:%1})").arg(fieldValue)
+        );
+
+        auto connServer = this->_shell->server();
+
+        auto app = AppRegistry::instance().app();
+
+        if (remoteConnName.compare(QString::fromStdString(connectionName)) != 0) {
+            auto connSettings = settingsManager->getConnectionSettingsByName(remoteConnName);
+
+            if (connSettings) {
+                auto resolveServer = [&app](const QString& name) -> MongoServer* {
+                    for (auto server : app->getServers()) {
+                        if (server->connectionRecord()->connectionName() != name.toStdString()) {
+                            continue;
+                        }
+
+                        return server;
+                    }
+
+                    return nullptr;
+                };
+
+                connServer = resolveServer(remoteConnName);
+
+                if (!connServer) {
+                    app->openServer(connSettings,Robomongo::ConnectionType::ConnectionPrimary);
+                }
+
+                connServer = resolveServer(remoteConnName);
+
+                while (!connServer->isConnected()) {
+                    QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
+                }
+            }
+        }
+
+        auto * database = new MongoDatabase(connServer, databaseName);
+
+        app->openShell(database, script,true, collectionTarget,Robomongo::CursorPosition());
     }
 
     void Notifier::onCopyTimestamp()

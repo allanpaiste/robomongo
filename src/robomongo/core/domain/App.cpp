@@ -1,3 +1,6 @@
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
 #include "robomongo/core/domain/App.h"
 #include <QHash>
 #include <QInputDialog>
@@ -14,6 +17,9 @@
 #include "robomongo/core/utils/QtUtils.h"
 #include "robomongo/core/utils/StdUtils.h"
 #include "robomongo/core/utils/Logger.h"
+
+#include "robomongo/core/AppRegistry.h"
+#include "robomongo/core/settings/SettingsManager.h"
 
 namespace Robomongo
 {
@@ -144,7 +150,22 @@ namespace Robomongo
         ConnectionSettings *connection = collection->database()->server()->connectionRecord();
         auto const& dbname = collection->database()->name();
         connection->setDefaultDatabase(dbname);
-        QString const& script = detail::buildCollectionQuery(collection->name(), "find({})");
+
+        auto const& settingsManager = AppRegistry::instance().settingsManager();
+
+        auto queries = settingsManager->queries();
+
+        QString query;
+
+        if (Robomongo::AppRegistry::instance().settingsManager()->featureFlags().contains("queries")) {
+            query = queries["*"].toMap()["*"].toString();
+        } else {
+            query = "find({})";
+        }
+
+
+
+        QString const& script = detail::buildCollectionQuery(collection->name(), query);
         openShell(collection->database()->server(), connection, ScriptInfo(script, true, dbname, CursorPosition(0, -2),
                                                                            QtUtils::toQString(dbname), filePathToSave));
     }

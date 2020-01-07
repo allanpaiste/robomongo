@@ -1,6 +1,9 @@
 #pragma once
 
 #include <QWidget>
+#include <QLineEdit>
+#include <QSortFilterProxyModel>
+
 QT_BEGIN_NAMESPACE
 class QTreeWidget;
 class QTreeWidgetItem;
@@ -32,6 +35,7 @@ namespace Robomongo
     private Q_SLOTS:
         void ui_itemExpanded(QTreeWidgetItem *item);
         void ui_itemDoubleClicked(QTreeWidgetItem *item, int column);
+        void ui_searchTextChanged(const QString &searchQuery);
 
     protected:
         virtual void keyPressEvent(QKeyEvent *event);   
@@ -42,5 +46,8 @@ namespace Robomongo
         void decreaseProgress();
         QLabel *_progressLabel;
         QTreeWidget *_treeWidget;
+        QLineEdit *_searchField;
+        QString _searchQuery;
+        bool _loading;
     };
 }

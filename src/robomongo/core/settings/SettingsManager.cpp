@@ -73,8 +73,14 @@ namespace Robomongo
         CONFIG_FILE_0_8_5                                                           // CONFIG_FILE_0_8_5
     };
 
-    std::vector<ConnectionSettings*>  SettingsManager::_connections;
-    
+    std::vector<ConnectionSettings*> SettingsManager::_connections;
+
+    QMap<QString, QVariant> SettingsManager::_collectionRelations;
+    QMap<QString, QVariant> SettingsManager::_connectionAliases;
+    QMap<QString, QVariant> SettingsManager::_queries;
+    QMap<QString, QVariant> SettingsManager::_remoteServices;
+    QMap<QString, QVariant> SettingsManager::_featureFlags;
+
     // Temporarily disabling Recent Connections feature
     // std::vector<RecentConnection> SettingsManager::_recentConnections;
 
@@ -275,6 +281,31 @@ namespace Robomongo
             addConnection(connSettings);
         }
 
+        if (map.contains("relations")) {
+            _collectionRelations.clear();
+            _collectionRelations = map.value("relations").toMap();
+        }
+
+        if (map.contains("connectionAliases")) {
+            _connectionAliases.clear();
+            _connectionAliases = map.value("connectionAliases").toMap();
+        }
+
+        if (map.contains("featureFlags")) {
+            _featureFlags.clear();
+            _featureFlags = map.value("featureFlags").toMap();
+        }
+
+        if (map.contains("remoteServices")) {
+            _remoteServices.clear();
+            _remoteServices = map.value("remoteServices").toMap();
+        }
+
+        if (map.contains("queries")) {
+            _queries.clear();
+            _queries = map.value("queries").toMap();
+        }
+
         /* Temporarily disabling Recent Connections feature
         // Load recent connections
         _recentConnections.clear();
@@ -387,6 +418,22 @@ namespace Robomongo
         }
         map.insert("recentConnections", recentConnsList);
         */
+
+        // 20. Save relations
+        map.insert("relations", _collectionRelations);
+
+        // 21. Save connection aliases
+        map.insert("connectionAliases", _connectionAliases);
+
+        // 22. Save queries
+        map.insert("queries", _queries);
+
+        // 23. Remote services
+        map.insert("remoteServices", _remoteServices);
+
+        // 24. Save connection aliases
+        map.insert("featureFlags", _featureFlags);
+
 
         map.insert("autoExec", _autoExec);
         map.insert("minimizeToTray", _minimizeToTray);
@@ -526,6 +573,19 @@ namespace Robomongo
         }
 
         LOG_MSG("Failed to find connection settings object by UUID.", mongo::logger::LogSeverity::Warning());
+        return nullptr;
+    }
+
+    ConnectionSettings* SettingsManager::getConnectionSettingsByName(QString const& name) const
+    {
+        const auto lookupName = name.toStdString();
+
+        for (auto const connSettings : _connections){
+            if (connSettings->connectionName() == lookupName)
+                return connSettings;
+        }
+
+        LOG_MSG("Failed to find connection settings object by name.", mongo::logger::LogSeverity::Warning());
         return nullptr;
     }
 

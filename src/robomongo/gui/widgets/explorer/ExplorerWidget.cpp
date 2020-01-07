@@ -8,6 +8,7 @@
 #include "robomongo/core/AppRegistry.h"
 #include "robomongo/core/domain/App.h"
 #include "robomongo/core/utils/QtUtils.h"
+#include "robomongo/core/settings/SettingsManager.h"
 
 #include "robomongo/gui/MainWindow.h"
 #include "robomongo/gui/widgets/explorer/ExplorerTreeWidget.h"
@@ -17,28 +18,53 @@
 #include "robomongo/gui/widgets/explorer/ExplorerReplicaSetTreeItem.h"
 #include "robomongo/gui/widgets/explorer/ExplorerReplicaSetFolderItem.h"
 #include "robomongo/gui/widgets/explorer/ExplorerUserTreeItem.h"
+#include <QLineEdit>
+#include <QVBoxLayout>
+#include <QStandardItemModel>
+#include <QDebug>
+#include <QTime>
 
 namespace Robomongo
 {
-
     ExplorerWidget::ExplorerWidget(MainWindow *parentMainWindow) : BaseClass(parentMainWindow),
         _progress(0)
     {
         _treeWidget = new ExplorerTreeWidget(this);
 
-        QHBoxLayout *vlaout = new QHBoxLayout();
-        vlaout->setMargin(0);
-        vlaout->addWidget(_treeWidget, Qt::AlignJustify);
+        _searchField = new QLineEdit;
+        _searchField->setPlaceholderText("Search...");
 
-        VERIFY(connect(_treeWidget, SIGNAL(itemExpanded(QTreeWidgetItem *)), this, SLOT(ui_itemExpanded(QTreeWidgetItem *))));
-        VERIFY(connect(_treeWidget, SIGNAL(itemDoubleClicked(QTreeWidgetItem *, int)), 
-                       this, SLOT(ui_itemDoubleClicked(QTreeWidgetItem *, int))));
+        QVBoxLayout* vLayout = new QVBoxLayout();
+        QHBoxLayout* topLayout = new QHBoxLayout();
+        QHBoxLayout* bottomLayout = new QHBoxLayout();
+
+        if (Robomongo::AppRegistry::instance().settingsManager()->featureFlags().contains("search")) {
+            vLayout->addLayout(topLayout);
+        }
+
+        vLayout->addLayout(bottomLayout);
+
+        vLayout->setMargin(0);
+        topLayout->setMargin(0);
+        bottomLayout->setMargin(0);
+
+        topLayout->addWidget(_searchField);
+        bottomLayout->addWidget(_treeWidget);
+
+        VERIFY(connect(_treeWidget, SIGNAL(itemExpanded(QTreeWidgetItem *)),
+                this, SLOT(ui_itemExpanded(QTreeWidgetItem *))));
+
+        VERIFY(connect(_treeWidget, SIGNAL(itemDoubleClicked(QTreeWidgetItem *, int)),
+                this, SLOT(ui_itemDoubleClicked(QTreeWidgetItem *, int))));
+
+        VERIFY(connect(_searchField, SIGNAL(textChanged(const QString &)),
+                this, SLOT(ui_searchTextChanged(const QString &))));
 
         // Temporarily disabling export/import feature
         //VERIFY(connect(_treeWidget, SIGNAL(currentItemChanged(QTreeWidgetItem *, QTreeWidgetItem *)),
         //               parentMainWindow, SLOT(onExplorerItemSelected(QTreeWidgetItem *))));
 
-        setLayout(vlaout);
+        setLayout(vLayout);
 
         QMovie *movie = new QMovie(":robomongo/icons/loading.gif", QByteArray(), this);
         _progressLabel = new QLabel(this);
@@ -167,5 +193,174 @@ namespace Robomongo
 
         // Toggle expanded state
         item->setExpanded(!item->isExpanded());
+    }
+
+    void ExplorerWidget::ui_searchTextChanged(const QString & inputValue)
+    {
+        _searchQuery = inputValue;
+
+        if (_loading) {
+            return;
+        }
+
+        // Fetch all items
+        QList<QTreeWidgetItem *> items = _treeWidget->findItems(
+                QString("*"),
+                Qt::MatchWrap | Qt::MatchWildcard | Qt::MatchRecursive
+        );
+
+        // Collect expandable items
+        QList<QTreeWidgetItem *> collectionItems;
+
+        // @todo: tank - make the targeted collections to be based on configuration instead of hard-coding them
+        for (QTreeWidgetItem *item : items)
+        {
+            if (item->text(0) != "Collections") {
+                continue;
+            }
+
+            QTreeWidgetItem *parent = item->parent();
+
+            if (parent) {
+                QString parentTitle = parent->text(0);
+
+                if (parentTitle == "admin" || parentTitle == "local" || parentTitle == "config") {
+                    continue;
+                }
+            }
+
+            collectionItems.append(item);
+        }
+
+        // Expand collection items & their parents
+        for (QTreeWidgetItem *item : collectionItems)
+        {
+            item->setExpanded(true);
+
+            QTreeWidgetItem *parent = item;
+
+            while (parent)
+            {
+                parent->setHidden(false);
+                parent->setExpanded(true);
+                parent = parent->parent();
+            }
+        }
+
+        // Wait for the Collection items to load properly
+        _loading = true;
+        while (true) {
+            QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
+
+            bool loading = false;
+
+            for (QTreeWidgetItem *item : collectionItems)
+            {
+                loading = loading || (item->isExpanded() && !item->childCount());
+
+                if (loading) {
+                    break;
+                }
+            }
+
+            if (loading) {
+                continue;
+            }
+
+            break;
+        }
+
+        _loading = false;
+
+        QString searchQuery = _searchQuery;
+
+        // Generate search query segments
+        QStringList queryChunks = searchQuery.split("|");
+        QStringList patternChunks;
+
+        for (const QString& queryChunk : queryChunks)
+        {
+            if (!queryChunk.length()) {
+                continue;
+            }
+
+            patternChunks.append(QString(".*%1.*").arg(
+                    queryChunk.trimmed()
+                            .replace("*", ".*")
+                            .replace("/", ".*/.*")
+            ));
+        }
+
+        QString searchPattern = QString("(%1)").arg(patternChunks.join("|"));
+
+        // Repopulate items
+        items = _treeWidget->findItems(
+                QString("*"),
+                Qt::MatchWrap | Qt::MatchWildcard | Qt::MatchRecursive
+        );
+
+        // Collect item paths
+        std::map<QTreeWidgetItem *, QString> itemPaths;
+
+        for (QTreeWidgetItem *item : items)
+        {
+            QTreeWidgetItem *parent = item;
+
+            QStringList pathParts;
+
+            while (parent)
+            {
+                pathParts.prepend(
+                        QString(qPrintable(parent->text(0))).remove(QRegExp(R"(\s+(\([0-9]+\))$)"))
+                );
+
+                parent = parent->parent();
+            }
+
+            itemPaths.insert(itemPaths.end(), { item, pathParts.join('/')});
+        }
+
+        // Resolve matches
+        QList<QTreeWidgetItem *> matches;
+
+        auto pathsIterator = itemPaths.begin();
+
+        QRegExp searchRegExp = QRegExp(searchPattern, Qt::CaseInsensitive);
+
+        while (pathsIterator != itemPaths.end()) {
+            QString path = pathsIterator->second;
+
+            if (path.indexOf(searchRegExp) >= 0) {
+                matches.append(pathsIterator->first);
+            }
+
+            pathsIterator++;
+        }
+
+        // Update item visibilities based on matches
+        for (QTreeWidgetItem *item : items)
+        {
+            if (item->isHidden() && item->text(99) != "tmp") {
+                continue;
+            }
+
+            item->setText(99, "tmp");
+
+            item->setHidden(searchQuery.length() && !matches.contains(item));
+        }
+
+        for (QTreeWidgetItem *match : matches)
+        {
+            QTreeWidgetItem *parent = match;
+
+            while (parent)
+            {
+                if (parent->isHidden() && parent->text(99) == "tmp") {
+                    parent->setHidden(false);
+                }
+
+                parent = parent->parent();
+            }
+        }
     }
 }

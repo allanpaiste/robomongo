@@ -1,3 +1,6 @@
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
 #include "robomongo/gui/dialogs/EulaDialog.h"
 
 #include <QApplication>

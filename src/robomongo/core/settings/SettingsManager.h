@@ -23,7 +23,9 @@ namespace Robomongo
                                                                         .arg(PROJECT_VERSION);  
     // Current config file directory
     auto const ConfigDir = QString("%1/.3T/robo-3t/%2/").arg(QDir::homePath())
-                                                        .arg(PROJECT_VERSION);  
+                                                        .arg(PROJECT_VERSION);
+
+    auto const ExtrasConfigPath = QString("%1/extras.json").arg(ConfigDir);
     /* Temporarily disabling Recent Connections feature
     struct RecentConnection
     {
@@ -113,6 +115,7 @@ namespace Robomongo
         */
         ConnectionSettings* getConnectionSettingsByUuid(QString const& uuid) const;
         ConnectionSettings* getConnectionSettingsByUuid(std::string const& uuid) const;
+        ConnectionSettings* getConnectionSettingsByName(QString const& name) const;
 
         void reorderConnections(const ConnectionSettingsContainerType &connections);
 
@@ -199,6 +202,13 @@ namespace Robomongo
         bool programExitedNormally() const { return _programExitedNormally; }
 
         bool useHttps() const { return _useHttps; }
+
+        QMap<QString, QVariant> collectionRelations() const { return _collectionRelations; }
+        QMap<QString, QVariant> connectionAliases() const { return _connectionAliases; }
+        QMap<QString, QVariant> featureFlags() const { return _featureFlags; }
+        QMap<QString, QVariant> remoteServices() const { return _remoteServices; }
+        QMap<QString, QVariant> queries() const { return _queries; }
+
         void setUseHttps(bool status) { _useHttps = status; }
 
         /**
@@ -288,5 +298,11 @@ namespace Robomongo
         // List of config. file absolute paths of old versions
         // Must be updated with care and with every new version. Details on cpp file.       
         static std::vector<QString> const _configFilesOfOldVersions;
+
+        static QMap<QString, QVariant> _collectionRelations;
+        static QMap<QString, QVariant> _connectionAliases;
+        static QMap<QString, QVariant> _featureFlags;
+        static QMap<QString, QVariant> _remoteServices;
+        static QMap<QString, QVariant> _queries;
     };
 }
