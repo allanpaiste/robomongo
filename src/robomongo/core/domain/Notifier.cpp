@@ -165,23 +165,19 @@ namespace Robomongo
             iRemoteServices.next();
 
             auto serviceGroups = iRemoteServices.value().toMap();
-
             QMapIterator<QString, QVariant> iServiceGroups(serviceGroups);
 
             while (iServiceGroups.hasNext()) {
                 iServiceGroups.next();
 
                 auto serviceItems = iServiceGroups.value().toMap();
-
                 QMapIterator<QString, QVariant> iServiceItems(serviceItems);
-
                 QString contextRef = QString("%1:%2").arg(iRemoteServices.key(), iServiceGroups.key());
 
                 while (iServiceItems.hasNext()) {
                     iServiceItems.next();
 
                     QString ref = QString("%1:%2").arg(iRemoteServices.key(), iServiceGroups.key());
-
                     const QString& serviceName = QString("Service: %1").arg(iServiceItems.key());
 
                     auto *action = new QAction(serviceName, wid);
