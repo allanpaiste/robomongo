@@ -141,11 +141,6 @@ set(SOURCES
     gui/resources/gui.qrc
 )
 
-set(OPENSSL_USE_STATIC_LIBS TRUE)
-
-#find_package(OpenSSL REQUIRED)
-#target_link_libraries(robomongo OpenSSL::Crypto)
-
 # Robomongo target
 add_executable(robomongo MACOSX_BUNDLE WIN32 app/main.cpp ${SOURCES})
 

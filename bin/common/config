@@ -1,3 +1,24 @@
 #!/usr/bin/env bash
 
-export OPENSSL_ROOT=/usr/local/Cellar/openssl/1.0.2t
+FILE_PATH="${BASH_SOURCE[0]}"
+BIN_DIR="$(cd "$(dirname ${FILE_PATH})/.." && pwd)"
+PROJECT_DIR=$(dirname ${BIN_DIR})
+REPOS_DIR=$(dirname ${PROJECT_DIR})
+
+PREFIX_PATHS=
+
+if [ -d ${REPOS_DIR}/openssl ] ; then
+    PREFIX_PATHS="${PREFIX_PATHS};${REPOS_DIR}/openssl"
+fi
+
+if [ -d ${REPOS_DIR}/robomongo-shell ] ; then
+    PREFIX_PATHS="${PREFIX_PATHS};${REPOS_DIR}/robomongo-shell"
+fi
+
+if [ -d ${REPOS_DIR}/qt ] ; then
+    QT_VERSION=$(ls -1 ${REPOS_DIR}/qt|grep '^[0-9]'|head -n1)
+    PREFIX_PATHS="${PREFIX_PATHS};${REPOS_DIR}/qt/${QT_VERSION}/clang_64"
+fi
+
+echo $PREFIX_PATHS
+export ROBOMONGO_CMAKE_PREFIX_PATH="${PREFIX_PATHS}"

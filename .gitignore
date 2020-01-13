@@ -97,4 +97,3 @@ Desktop.ini
 # Recycle Bin used on file shares
 $RECYCLE.BIN/
 .vscode/settings.json
-cmake-build-debug

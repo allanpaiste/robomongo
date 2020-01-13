@@ -1,31 +1,101 @@
-Bash fronted for CMake
-======================
+Pre-requisites for build
+========================
 
-If you want to use this scripts, you need to set single environment variable:
+Prerequisites
+-------------
+
+Note that this guide DOES assume that all the dependencies/sources share same root path (example: every library is within
+the folder /my/projects). This requirement/recommendation DOES include this project as well. 
+
+If you don't have such a setup for dependent libraries in such a way, you are STRONGLY encouraged to do so. 
+
+Install Mongo-Shell
+"""""""""""""""""""
+
+Resides in another repository which you should clone to the same projects root.
 
 ```shell
-brew install qt gcc cmake openssl
-
-OPENSSL_ROOT=/usr/local/Cellar/openssl/1.0.2t
-
-cp ${OPENSSL_ROOT}/lib/libssl.dylib ${OPENSSL_ROOT}/libssl.dylib
-cp ${OPENSSL_ROOT}/lib/libcrypto.dylib ${OPENSSL_ROOT}/libcrypto.dylib
-cp ${OPENSSL_ROOT}/libssl.dylib ${OPENSSL_ROOT}/libssl.1.0.0.dylib
-cp ${OPENSSL_ROOT}/libcrypto.dylib ${OPENSSL_ROOT}/libcrypto.1.0.0.dylib
+git clone git@github.com:allanpaiste/robomongo-shell.git
 ```
+
+After this you should follow the guide in bin/README.md
+
+Install Homebrew
+""""""""""""""""
+
+This will just make the installation of certain libraries so much easier.
+
+```shell
+/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+``` 
+
+Install Open SSL
+""""""""""""""""
+
+This guide assumes that you are in the root of the repositories 
+
+```shell
+curl -LO https://www.openssl.org/source/old/1.0.2/openssl-1.0.2u.tar.gz > openssl-1.0.2u.tar.gz
+tar -xvzf openssl-1.0.2*.tar.gz
+rm openssl-1.0.2u.tar.gz
+mv openssl-* openssl
+
+cd openssl
+./Configure darwin64-x86_64-cc shared --openssldir="@rpath"
+
+make -j9
+
+# You might be getting "WARNING: can't open config file: @rpath/@rpath/openssl.cnf" at the end end of 
+# the build process which you can ignore 
+```
+
+Install Gcc & CMake 
+"""""""""""""""""""
+
+```shell
+brew install gcc cmake
+```
+
+Install Qt
+""""""""""
+
+This will be a ~3.5G download.
+
+Execute it in the root folder of the repositories
+
+```shell
+curl -Lo- http://download.qt.io/archive/qt/5.9/5.9.3/qt-opensource-mac-x64-5.9.3.dmg > qt-opensource-mac-x64-5.9.3.dmg
+hdiutil attach qt-opensource-mac-x64-5.9.3.dmg
+open /Volumes/qt-opensource-mac-x64-5.9.3/qt-opensource-mac-x64-5.9.3.app
+
+# Install it to the /path/to/project/roots/qt
+# Make sure that the following are included in the installation:
+# * macOS
+# * (All Qt libraries)
+```
+
+Build
+-----
 
 Configure Robomongo project (only one of these is needed but when working with the project, it's better to have 
 both release and debug configurations ready):
 
 ```shell
+# Release
 bin/configure
+
+# Debug/Develop
 bin/configure debug
 ```
 
 Build Robomongo (release):
 
 ```shell
+# Release
 bin/build
+
+# Debug/Develop
+bin/build debug
 ```
 
 Install Robomongo:

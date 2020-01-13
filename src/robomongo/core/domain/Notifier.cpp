@@ -228,11 +228,6 @@ namespace Robomongo
         std::string collectionName = ns.collectionName();
         std::string connectionName = this->_shell->server()->connectionRecord()->connectionName();
 
-
-
-
-
-
         std::string databaseName = ns.databaseName();
 
         auto const& settingsManager = Robomongo::AppRegistry::instance().settingsManager();
