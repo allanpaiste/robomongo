@@ -20,12 +20,15 @@ namespace Robomongo
                                                              .arg(PROJECT_VERSION);
     // Current config file
     auto const ConfigFilePath = QString("%1/.3T/robo-3t/%2/robo3t.json").arg(QDir::homePath())
-                                                                        .arg(PROJECT_VERSION);  
+                                                                        .arg(PROJECT_VERSION);
+
+    // Custom/manual overrides to the normal config
+    auto const ConfigFileExtrasPath = QString("%1/robo3t.json").arg(QDir::homePath());
+
     // Current config file directory
     auto const ConfigDir = QString("%1/.3T/robo-3t/%2/").arg(QDir::homePath())
                                                         .arg(PROJECT_VERSION);
 
-    auto const ExtrasConfigPath = QString("%1/extras.json").arg(ConfigDir);
     /* Temporarily disabling Recent Connections feature
     struct RecentConnection
     {
@@ -224,9 +227,19 @@ namespace Robomongo
         void loadFromMap(QVariantMap &map);
 
         /**
+         * Load settings from the map. Existing settings will be overwritten.
+         */
+        static void loadExtrasFromMap(QVariantMap &map);
+
+        /**
          * Save all settings to map.
          */
         QVariantMap convertToMap() const;
+
+        /**
+         * Load file contents to QVariantMap
+         */
+        QVariantMap loadFileToMap(QString filePath);
 
         // Find existing anonymousID from Robomongo and 3T config files, if not found create
         // a new anonymousID.

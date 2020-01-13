@@ -1,6 +1,8 @@
 Pre-requisites for build
 ========================
 
+The following guide covers the steps/extras needed to build Robomongo.
+
 Prerequisites
 -------------
 
@@ -8,6 +10,15 @@ Note that this guide DOES assume that all the dependencies/sources share same ro
 the folder /my/projects). This requirement/recommendation DOES include this project as well. 
 
 If you don't have such a setup for dependent libraries in such a way, you are STRONGLY encouraged to do so. 
+
+Install Homebrew
+""""""""""""""""
+
+This will just make the installation of certain libraries so much easier.
+
+```shell
+/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+``` 
 
 Install Mongo-Shell
 """""""""""""""""""
@@ -19,15 +30,6 @@ git clone git@github.com:allanpaiste/robomongo-shell.git
 ```
 
 After this you should follow the guide in bin/README.md
-
-Install Homebrew
-""""""""""""""""
-
-This will just make the installation of certain libraries so much easier.
-
-```shell
-/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
-``` 
 
 Install Open SSL
 """"""""""""""""

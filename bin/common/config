@@ -20,5 +20,4 @@ if [ -d ${REPOS_DIR}/qt ] ; then
     PREFIX_PATHS="${PREFIX_PATHS};${REPOS_DIR}/qt/${QT_VERSION}/clang_64"
 fi
 
-echo $PREFIX_PATHS
 export ROBOMONGO_CMAKE_PREFIX_PATH="${PREFIX_PATHS}"

@@ -62,6 +62,7 @@ namespace Robomongo
     //                 vector initializer list below in order.
     std::vector<QString> const SettingsManager::_configFilesOfOldVersions
     {
+        QString("%1/.3T/robo-3t/1.3.1/robo3t.json").arg(QDir::homePath()),          // CONFIG_FILE_1_3_0_BETA
         QString("%1/.3T/robo-3t/1.3.0/robo3t.json").arg(QDir::homePath()),          // CONFIG_FILE_1_3_0_BETA
         QString("%1/.3T/robo-3t/1.2.1/robo3t.json").arg(QDir::homePath()),          // CONFIG_FILE_1_2_1
         QString("%1/.3T/robo-3t/1.2.0/robo3t.json").arg(QDir::homePath()),          // CONFIG_FILE_1_2_0_BETA
@@ -142,8 +143,39 @@ namespace Robomongo
             return false;
 
         loadFromMap(map);
+        loadExtrasFromMap(map);
+
+        QVariantMap mapExtras = loadFileToMap(ConfigFileExtrasPath);
+
+        if (mapExtras.count()) {
+            loadExtrasFromMap(mapExtras);
+        }
 
         return true;
+    }
+
+    QVariantMap SettingsManager::loadFileToMap(QString filePath)
+    {
+        bool ok;
+
+        if (!QFile::exists(ConfigFileExtrasPath)) {
+            return QVariantMap();
+        }
+
+        QFile fExtras(ConfigFileExtrasPath);
+
+        if (!fExtras.open(QIODevice::ReadOnly)) {
+            return QVariantMap();
+        }
+
+        QJson::Parser parser;
+        QVariantMap mapExtras = parser.parse(fExtras.readAll(), &ok).toMap();
+
+        if (!ok) {
+            return QVariantMap();
+        }
+
+        return mapExtras;
     }
 
     /**
@@ -180,8 +212,36 @@ namespace Robomongo
         return _cacheData.value(key);
     }
 
+    void SettingsManager::loadExtrasFromMap(QVariantMap &map)
+    {
+        if (map.contains("featureFlags")) {
+            _featureFlags.clear();
+            _featureFlags = map.value("featureFlags").toMap();
+        }
+
+        if (map.contains("relations")) {
+            _collectionRelations.clear();
+            _collectionRelations = map.value("relations").toMap();
+        }
+
+        if (map.contains("connectionAliases")) {
+            _connectionAliases.clear();
+            _connectionAliases = map.value("connectionAliases").toMap();
+        }
+
+        if (map.contains("remoteServices")) {
+            _remoteServices.clear();
+            _remoteServices = map.value("remoteServices").toMap();
+        }
+
+        if (map.contains("queries")) {
+            _queries.clear();
+            _queries = map.value("queries").toMap();
+        }
+    }
+
     /**
-     * Load settings from the map. Existings settings will be overwritten.
+     * Load settings from the map. Existing settings will be overwritten.
      */
     void SettingsManager::loadFromMap(QVariantMap &map)
     {
