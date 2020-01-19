@@ -78,6 +78,7 @@ namespace Robomongo
 
     QMap<QString, QVariant> SettingsManager::_collectionRelations;
     QMap<QString, QVariant> SettingsManager::_connectionAliases;
+    QStringList SettingsManager::_defaultSearchTargets;
     QMap<QString, QVariant> SettingsManager::_queries;
     QMap<QString, QVariant> SettingsManager::_remoteServices;
     QMap<QString, QVariant> SettingsManager::_featureFlags;
@@ -229,6 +230,12 @@ namespace Robomongo
             _connectionAliases = map.value("connectionAliases").toMap();
         }
 
+        if (map.contains("defaultSearchTargets")) {
+            _defaultSearchTargets.clear();
+            _defaultSearchTargets = map.value("defaultSearchTargets").toStringList();
+        }
+
+
         if (map.contains("remoteServices")) {
             _remoteServices.clear();
             _remoteServices = map.value("remoteServices").toMap();
@@ -341,30 +348,7 @@ namespace Robomongo
             addConnection(connSettings);
         }
 
-        if (map.contains("relations")) {
-            _collectionRelations.clear();
-            _collectionRelations = map.value("relations").toMap();
-        }
-
-        if (map.contains("connectionAliases")) {
-            _connectionAliases.clear();
-            _connectionAliases = map.value("connectionAliases").toMap();
-        }
-
-        if (map.contains("featureFlags")) {
-            _featureFlags.clear();
-            _featureFlags = map.value("featureFlags").toMap();
-        }
-
-        if (map.contains("remoteServices")) {
-            _remoteServices.clear();
-            _remoteServices = map.value("remoteServices").toMap();
-        }
-
-        if (map.contains("queries")) {
-            _queries.clear();
-            _queries = map.value("queries").toMap();
-        }
+        loadExtrasFromMap(map);
 
         /* Temporarily disabling Recent Connections feature
         // Load recent connections
@@ -491,9 +475,11 @@ namespace Robomongo
         // 23. Remote services
         map.insert("remoteServices", _remoteServices);
 
-        // 24. Save connection aliases
+        // 24. Save feature flags
         map.insert("featureFlags", _featureFlags);
 
+        // 25. Save default search targets
+        map.insert("defaultSearchTargets", _defaultSearchTargets);
 
         map.insert("autoExec", _autoExec);
         map.insert("minimizeToTray", _minimizeToTray);

@@ -10,6 +10,18 @@ namespace Robomongo
     class ExplorerReplicaSetFolderItem;
     class ExplorerTreeItem;
 
+    class MongoExplorerTreeServerAdded : public Event
+    {
+    R_EVENT
+
+        MongoExplorerTreeServerAdded(QObject *sender, QTreeWidgetItem *item) :
+                Event(sender),
+                item(item) { }
+
+        QTreeWidgetItem* item;
+    };
+
+
     class ExplorerServerTreeItem : public ExplorerTreeItem
     {
         Q_OBJECT

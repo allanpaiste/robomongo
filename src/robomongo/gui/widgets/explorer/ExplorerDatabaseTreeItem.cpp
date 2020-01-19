@@ -21,7 +21,6 @@
 #include "robomongo/gui/widgets/explorer/ExplorerFunctionTreeItem.h"
 #include "robomongo/gui/GuiRegistry.h"
 
-
 namespace
 {
     void openCurrentDatabaseShell(Robomongo::MongoDatabase *database, const QString &script, bool execute = true, 
@@ -34,6 +33,8 @@ namespace
 
 namespace Robomongo
 {
+    R_REGISTER_EVENT(MongoExplorerTreePopulated)
+
     namespace detail
     {
         QString buildName(const QString& text, int count)
@@ -44,6 +45,7 @@ namespace Robomongo
             return QString("%1 (%2)").arg(text).arg(count);
         }
     }
+
     ExplorerDatabaseTreeItem::ExplorerDatabaseTreeItem(QTreeWidgetItem *parent, MongoDatabase *const database) :
         BaseClass(parent),
         _database(database),
@@ -170,8 +172,6 @@ namespace Robomongo
         _collectionSystemFolderItem->setText(0, "System");
         _collectionFolderItem->addChild(_collectionSystemFolderItem);
 
-        // @todo: tank - remove items that have been marked to be hidden
-
         for (int i = 0; i < collections.size(); ++i) {
             MongoCollection *collection = collections[i];
 
@@ -183,6 +183,8 @@ namespace Robomongo
         }
 
         showCollectionSystemFolderIfNeeded();
+
+        _bus->publish(new MongoExplorerTreePopulated(this, _collectionFolderItem));
     }
 
     void ExplorerDatabaseTreeItem::handle(MongoDatabaseUsersLoadedEvent *event)

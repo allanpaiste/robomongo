@@ -8,9 +8,13 @@
 #include "robomongo/core/AppRegistry.h"
 #include "robomongo/core/domain/App.h"
 #include "robomongo/core/utils/QtUtils.h"
+
 #include "robomongo/core/settings/SettingsManager.h"
+#include "robomongo/core/domain/MongoServer.h"
+#include "robomongo/core/events/MongoEvents.h"
 
 #include "robomongo/gui/MainWindow.h"
+#include "robomongo/gui/widgets/explorer/ExplorerDatabaseTreeItem.h"
 #include "robomongo/gui/widgets/explorer/ExplorerTreeWidget.h"
 #include "robomongo/gui/widgets/explorer/ExplorerServerTreeItem.h"
 #include "robomongo/gui/widgets/explorer/ExplorerCollectionTreeItem.h"
@@ -19,10 +23,10 @@
 #include "robomongo/gui/widgets/explorer/ExplorerReplicaSetFolderItem.h"
 #include "robomongo/gui/widgets/explorer/ExplorerUserTreeItem.h"
 #include <QLineEdit>
-#include <QVBoxLayout>
 #include <QStandardItemModel>
-#include <QDebug>
 #include <QTime>
+
+#include "robomongo/core/EventBus.h"
 
 namespace Robomongo
 {
@@ -34,9 +38,12 @@ namespace Robomongo
         _searchField = new QLineEdit;
         _searchField->setPlaceholderText("Search...");
 
-        QVBoxLayout* vLayout = new QVBoxLayout();
-        QHBoxLayout* topLayout = new QHBoxLayout();
-        QHBoxLayout* bottomLayout = new QHBoxLayout();
+        auto* vLayout = new QVBoxLayout();
+        auto* topLayout = new QHBoxLayout();
+        auto* bottomLayout = new QHBoxLayout();
+
+        AppRegistry::instance().bus()->subscribe(this, MongoExplorerTreeServerAdded::Type);
+        AppRegistry::instance().bus()->subscribe(this, MongoExplorerTreePopulated::Type);
 
         if (Robomongo::AppRegistry::instance().settingsManager()->featureFlags().contains("search")) {
             vLayout->addLayout(topLayout);
@@ -66,7 +73,8 @@ namespace Robomongo
 
         setLayout(vLayout);
 
-        QMovie *movie = new QMovie(":robomongo/icons/loading.gif", QByteArray(), this);
+        auto *movie = new QMovie(":robomongo/icons/loading.gif", QByteArray(), this);
+
         _progressLabel = new QLabel(this);
         _progressLabel->setMovie(movie);
         _progressLabel->hide();
@@ -146,27 +154,51 @@ namespace Robomongo
         decreaseProgress();
     }
 
+    void ExplorerWidget::handle(MongoExplorerTreeServerAdded *event)
+    {
+        if (!_searchQuery.length()) {
+            return;
+        }
+
+        expandSearchableFolders(_treeWidget);
+        applySearchFilter(_treeWidget, _searchQuery);
+    }
+
+    void ExplorerWidget::handle(MongoExplorerTreePopulated *event)
+    {
+        if (!_searchQuery.length()) {
+            return;
+        }
+
+        applySearchFilter(_treeWidget, _searchQuery);
+    }
+
     void ExplorerWidget::ui_itemExpanded(QTreeWidgetItem *item)
     {
         auto categoryItem = dynamic_cast<ExplorerDatabaseCategoryTreeItem *>(item);
+
         if (categoryItem) {
             categoryItem->expand();
+
             return;
         }
 
         auto serverItem = dynamic_cast<ExplorerServerTreeItem *>(item);
+
         if (serverItem) {
             serverItem->expand();
             return;
         }
 
         auto replicaSetFolder = dynamic_cast<ExplorerReplicaSetFolderItem *>(item);
+
         if (replicaSetFolder) {
             replicaSetFolder->expand();
             return;
         }
        
         auto dirItem = dynamic_cast<ExplorerCollectionDirIndexesTreeItem *>(item);
+
         if (dirItem) {
             dirItem->expand();
         }
@@ -195,6 +227,62 @@ namespace Robomongo
         item->setExpanded(!item->isExpanded());
     }
 
+    MongoServer* ExplorerWidget::resolveConnectionRecord(const QString &connectionName)
+    {
+        auto app = AppRegistry::instance().app();
+
+        auto servers = app->getServers();
+
+        for (MongoServer* server : servers) {
+            auto conn = server->connectionRecord();
+
+            if (conn->connectionName() != connectionName.toStdString()) {
+                continue;
+            }
+
+            return server;
+        }
+
+        return nullptr;
+    }
+
+    void ExplorerWidget::ensureConnections(const QStringList &searchTargets)
+    {
+        auto app = AppRegistry::instance().app();
+
+        auto const& settingsManager = Robomongo::AppRegistry::instance().settingsManager();
+
+        QList<MongoServer*> connections;
+
+        for (const auto& remoteConnName : searchTargets) {
+            auto connSettings = settingsManager->getConnectionSettingsByName(remoteConnName);
+
+            if (!connSettings) {
+                continue;
+            }
+
+            MongoServer* conn = resolveConnectionRecord(remoteConnName);
+
+            if (!conn) {
+                app->openServer(connSettings,Robomongo::ConnectionType::ConnectionPrimary);
+            }
+
+            connections << resolveConnectionRecord(remoteConnName);
+        }
+
+        while (connections.length()) {
+            for (auto conn : connections) {
+                if (!conn->isConnected()) {
+                    continue;
+                }
+
+                connections.removeOne(conn);
+            }
+
+            QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
+        }
+    }
+
     void ExplorerWidget::ui_searchTextChanged(const QString & inputValue)
     {
         _searchQuery = inputValue;
@@ -203,8 +291,28 @@ namespace Robomongo
             return;
         }
 
+        auto app = AppRegistry::instance().app();
+
+        // Start the default connections when none ara available
+        if (app->getServers().empty()) {
+            _loading = true;
+
+            auto const& settingsManager = Robomongo::AppRegistry::instance().settingsManager();
+            auto searchTargets = settingsManager->defaultSearchTargets();
+
+            ensureConnections(searchTargets);
+
+            _loading = false;
+        }
+
+        expandSearchableFolders(_treeWidget);
+        applySearchFilter(_treeWidget, _searchQuery);
+    }
+
+    void ExplorerWidget::expandSearchableFolders(QTreeWidget *treeWidget)
+    {
         // Fetch all items
-        QList<QTreeWidgetItem *> items = _treeWidget->findItems(
+        QList<QTreeWidgetItem *> items = treeWidget->findItems(
                 QString("*"),
                 Qt::MatchWrap | Qt::MatchWildcard | Qt::MatchRecursive
         );
@@ -212,9 +320,7 @@ namespace Robomongo
         // Collect expandable items
         QList<QTreeWidgetItem *> collectionItems;
 
-        // @todo: tank - make the targeted collections to be based on configuration instead of hard-coding them
-        for (QTreeWidgetItem *item : items)
-        {
+        for (QTreeWidgetItem *item : items) {
             if (item->text(0) != "Collections") {
                 continue;
             }
@@ -233,53 +339,26 @@ namespace Robomongo
         }
 
         // Expand collection items & their parents
-        for (QTreeWidgetItem *item : collectionItems)
-        {
+        for (QTreeWidgetItem *item : collectionItems) {
             item->setExpanded(true);
 
             QTreeWidgetItem *parent = item;
 
-            while (parent)
-            {
+            while (parent) {
                 parent->setHidden(false);
                 parent->setExpanded(true);
                 parent = parent->parent();
             }
         }
+    }
 
-        // Wait for the Collection items to load properly
-        _loading = true;
-        while (true) {
-            QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
-
-            bool loading = false;
-
-            for (QTreeWidgetItem *item : collectionItems)
-            {
-                loading = loading || (item->isExpanded() && !item->childCount());
-
-                if (loading) {
-                    break;
-                }
-            }
-
-            if (loading) {
-                continue;
-            }
-
-            break;
-        }
-
-        _loading = false;
-
-        QString searchQuery = _searchQuery;
-
+    void ExplorerWidget::applySearchFilter(QTreeWidget *treeWidget, const QString &searchQuery)
+    {
         // Generate search query segments
         QStringList queryChunks = searchQuery.split("|");
         QStringList patternChunks;
 
-        for (const QString& queryChunk : queryChunks)
-        {
+        for (const QString& queryChunk : queryChunks) {
             if (!queryChunk.length()) {
                 continue;
             }
@@ -294,7 +373,7 @@ namespace Robomongo
         QString searchPattern = QString("(%1)").arg(patternChunks.join("|"));
 
         // Repopulate items
-        items = _treeWidget->findItems(
+        auto items = treeWidget->findItems(
                 QString("*"),
                 Qt::MatchWrap | Qt::MatchWildcard | Qt::MatchRecursive
         );
@@ -302,14 +381,12 @@ namespace Robomongo
         // Collect item paths
         std::map<QTreeWidgetItem *, QString> itemPaths;
 
-        for (QTreeWidgetItem *item : items)
-        {
+        for (QTreeWidgetItem *item : items) {
             QTreeWidgetItem *parent = item;
 
             QStringList pathParts;
 
-            while (parent)
-            {
+            while (parent) {
                 pathParts.prepend(
                         QString(qPrintable(parent->text(0))).remove(QRegExp(R"(\s+(\([0-9]+\))$)"))
                 );
@@ -338,8 +415,7 @@ namespace Robomongo
         }
 
         // Update item visibilities based on matches
-        for (QTreeWidgetItem *item : items)
-        {
+        for (QTreeWidgetItem *item : items) {
             if (item->isHidden() && item->text(99) != "tmp") {
                 continue;
             }
@@ -349,12 +425,10 @@ namespace Robomongo
             item->setHidden(searchQuery.length() && !matches.contains(item));
         }
 
-        for (QTreeWidgetItem *match : matches)
-        {
+        for (QTreeWidgetItem *match : matches) {
             QTreeWidgetItem *parent = match;
 
-            while (parent)
-            {
+            while (parent) {
                 if (parent->isHidden() && parent->text(99) == "tmp") {
                     parent->setHidden(false);
                 }

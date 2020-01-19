@@ -177,8 +177,6 @@ namespace Robomongo
         connectButtonLay->addStretch();
         */
 
-        // @todo: tank - add something useful here
-
 //        //// What's new section
 //        _whatsNewHeader = new QLabel;
 //        _whatsNewHeader->setHidden(true);

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "robomongo/gui/widgets/explorer/ExplorerTreeItem.h"
+#include "robomongo/core/events/MongoEvents.h"
 
 namespace Robomongo
 {
@@ -23,6 +24,17 @@ namespace Robomongo
     class MongoFunction;
     class MongoCollection;
     struct EnsureIndexInfo;
+
+    class MongoExplorerTreePopulated : public Event
+    {
+        R_EVENT
+
+        MongoExplorerTreePopulated(QObject *sender, QTreeWidgetItem *item) :
+                Event(sender),
+                item(item) { }
+
+        QTreeWidgetItem* item;
+    };
 
     class ExplorerDatabaseTreeItem : public ExplorerTreeItem
     {

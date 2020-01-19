@@ -221,7 +221,9 @@ namespace Robomongo
     void ExplorerDatabaseCategoryTreeItem::ui_refreshCollections()
     {
         ExplorerDatabaseTreeItem *databaseItem = ExplorerDatabaseCategoryTreeItem::databaseItem();
-        if (databaseItem) 
+
+        if (databaseItem) {
             databaseItem->expandCollections();
+        }
     }
 }

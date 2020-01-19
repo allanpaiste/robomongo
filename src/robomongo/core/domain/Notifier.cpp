@@ -216,7 +216,9 @@ namespace Robomongo
             isRoot = detail::isDocumentRoot(item);
         }
 
-        if (Robomongo::AppRegistry::instance().settingsManager()->featureFlags().contains("references")) {
+        auto const& settingsManager = Robomongo::AppRegistry::instance().settingsManager();
+
+        if (settingsManager->featureFlags().contains("references")) {
             if (onItem && isObjectId && item->fieldName() != "_id") {
                 menu->addAction(_findReferredDocument);
                 if (onItem && isEditable) menu->addSeparator();
@@ -230,7 +232,6 @@ namespace Robomongo
 
         std::string databaseName = ns.databaseName();
 
-        auto const& settingsManager = Robomongo::AppRegistry::instance().settingsManager();
         auto connectionAliases = settingsManager->connectionAliases();
 
         /**
@@ -632,7 +633,7 @@ namespace Robomongo
         if (!index.isValid())
             return;
 
-        BsonTreeItem *documentItem = QtUtils::item<BsonTreeItem*>(index);
+        auto *documentItem = QtUtils::item<BsonTreeItem*>(index);
 
         if (!documentItem)
             return;
@@ -660,6 +661,8 @@ namespace Robomongo
 
         QStringList references;
 
+        references << QString("%1.%2").arg(QString::fromStdString(collectionName), fieldName);
+        references << fieldName;
         references << QString("%1.%2").arg(QString::fromStdString(collectionName), fieldReference);
         references << fieldReference;
 
@@ -779,7 +782,7 @@ namespace Robomongo
         if (!selectedInd.isValid())
             return;
 
-        BsonTreeItem *documentItem = QtUtils::item<BsonTreeItem*>(selectedInd);
+        auto *documentItem = QtUtils::item<BsonTreeItem*>(selectedInd);
         if (!documentItem)
             return;
 
@@ -815,7 +818,7 @@ namespace Robomongo
          if (!selectedInd.isValid())
              return;
 
-         BsonTreeItem *documentItem = QtUtils::item<BsonTreeItem*>(selectedInd);
+         auto *documentItem = QtUtils::item<BsonTreeItem*>(selectedInd);
          if (!documentItem)
              return;
 
