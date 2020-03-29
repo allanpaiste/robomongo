@@ -4,6 +4,7 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QSplitter>
+#include <QLineEdit>
 
 #include "robomongo/core/utils/QtUtils.h"
 #include "robomongo/gui/GuiRegistry.h"
@@ -41,6 +42,14 @@ namespace Robomongo
 
         auto const* outputWidget = qobject_cast<OutputWidget*>(outputItemContentWidget->parentWidget());
         _orientation = outputWidget->getOrientation();
+
+        // @todo: tank - implement search
+        // Search
+        _searchField = new QLineEdit;
+        _searchField->setPlaceholderText("Search...");
+        _searchField->setMinimumWidth(150);
+        _searchField->setMaximumWidth(400);
+        _searchField->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
         // Text mode button
         _textButton = new QPushButton(this);
@@ -121,7 +130,10 @@ namespace Robomongo
         layout->setSpacing(0);
         layout->addWidget(_collectionIndicator);
         layout->addWidget(_timeIndicator);
-        QSpacerItem *hSpacer = new QSpacerItem(2000, 24, QSizePolicy::Preferred, QSizePolicy::Minimum);
+        QSpacerItem *hSpacer2 = new QSpacerItem(0, 24, QSizePolicy::Expanding, QSizePolicy::Minimum);
+        layout->addSpacerItem(hSpacer2);
+        layout->addWidget(_searchField);
+        QSpacerItem *hSpacer = new QSpacerItem(0, 24, QSizePolicy::Expanding, QSizePolicy::Minimum);
         layout->addSpacerItem(hSpacer);
         layout->addWidget(_paging);
         layout->addWidget(createVerticalLine());

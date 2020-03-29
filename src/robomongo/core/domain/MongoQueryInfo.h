@@ -14,6 +14,7 @@ namespace Robomongo
     {
         CollectionInfo();
         CollectionInfo(const std::string &server, const std::string &database, const std::string &collection);
+        CollectionInfo(const std::string &server, const std::string &database, const std::string &collection, const std::string &connection);
         bool isValid() const;
 
         std::string _serverAddress;

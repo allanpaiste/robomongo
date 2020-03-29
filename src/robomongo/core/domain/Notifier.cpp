@@ -154,6 +154,9 @@ namespace Robomongo
         VERIFY(connect(_findReferredDocument, SIGNAL(triggered()), SLOT(onFindReferredDocument())));
 
         auto settingsManager = Robomongo::AppRegistry::instance().settingsManager();
+
+        // @todo: tank - add support for "mongoproxy" (config already in present) via allowing services to be defined
+        //        ... for ALL collections
         auto remoteServices = settingsManager->remoteServices();
 
         QMapIterator<QString, QVariant> iRemoteServices(remoteServices);
@@ -618,7 +621,9 @@ namespace Robomongo
                         .replace(QRegExp("(\"|')"), "");
             }
 
-            actionUrl = QString(actionUrl).replace(QString("{{%1}}").arg(name), value);
+            actionUrl = QString(actionUrl).replace(QString("{{%1}}").arg(name), value)
+                    .replace(QString("{{__lower:%1}}").arg(name), value.toLower())
+                    .replace(QString("{{__upper:%1}}").arg(name), value.toUpper());
         }
 
         const QString &tsUTC = QDateTime::currentDateTimeUtc().toString("yyyy-MM-ddTHH:mm:ss.zzzZ/0");
@@ -628,6 +633,8 @@ namespace Robomongo
         QDesktopServices::openUrl(QUrl(actionUrl));
     }
 
+    // @todo: tank - implement opening references from sub-fields ("accountcollection.partners": "partnercollection")
+    // @todo: tank - support : "order": "https://panel.starship.xyz/marketplace/orders/{{parcel.description:.*#(.*)}}"
     void Notifier::onFindReferredDocument(const QModelIndex &index)
     {
         if (!index.isValid())
@@ -656,9 +663,7 @@ namespace Robomongo
         std::string connectionName = this->_shell->server()->connectionRecord()->connectionName();
 
         QString collectionNameTemplate = "%1collections";
-
         QString fieldReference = fieldName.replace("_", "");
-
         QStringList references;
 
         references << QString("%1.%2").arg(QString::fromStdString(collectionName), fieldName);

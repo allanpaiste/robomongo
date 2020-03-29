@@ -23,6 +23,12 @@ namespace Robomongo
         _ns(database, collection)
     {}
 
+    CollectionInfo::CollectionInfo(const std::string &server, const std::string &database,
+                                   const std::string &collection, const std::string &connection)
+            :_serverAddress(server),
+             _ns(database, collection, connection)
+    {}
+
     bool CollectionInfo::isValid() const
     {
         return !_serverAddress.empty() && _ns.isValid();

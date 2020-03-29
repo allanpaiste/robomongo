@@ -15,6 +15,7 @@ namespace Robomongo
     {
         QString _key;
         QString _value;
+        QString _decoratedValue;
         mongo::BSONType _type;
         mongo::BinDataType _binType;
     };
@@ -28,7 +29,8 @@ namespace Robomongo
             eKey = 0,
             eValue = 1,
             eType = 2,
-            eCountColumns = 3
+            eDecoratedValue = 3,
+            eCountColumns = 4
         };
 
         typedef QObject BaseClass;
@@ -58,6 +60,9 @@ namespace Robomongo
 
         QString value() const;
         void setValue(const QString &value);
+
+        QString decoratedValue() const;
+        void setDecoratedValue(const QString &value);
 
         mongo::BSONType type() const;
         void setType(mongo::BSONType type);

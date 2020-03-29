@@ -122,6 +122,11 @@ namespace Robomongo
         return _fields._value;
     }
 
+    QString BsonTreeItem::decoratedValue() const
+    {
+        return _fields._decoratedValue;
+    }
+
     mongo::BSONType BsonTreeItem::type() const
     {
         return _fields._type;
@@ -135,6 +140,11 @@ namespace Robomongo
     void BsonTreeItem::setValue(const QString &value)
     {
         _fields._value = value;
+    }
+
+    void BsonTreeItem::setDecoratedValue(const QString &value)
+    {
+        _fields._decoratedValue = value;
     }
 
     void BsonTreeItem::setType(mongo::BSONType type)

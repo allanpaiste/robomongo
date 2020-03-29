@@ -387,7 +387,9 @@ namespace Robomongo
 
             bool special = _scope->getBoolean("__robomongoSpecial");
 
-            MongoQueryInfo const info{ CollectionInfo(serverAddress, dbName, collectionName),
+            auto connectionName = _connection->connectionName();
+
+            MongoQueryInfo const info{ CollectionInfo(serverAddress, dbName, collectionName, connectionName),
                                        query, fields, limit, skip, batchSize, options, special };
             return MongoShellResult(type, output, objects, info, statement, elapsedms);
         }

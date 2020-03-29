@@ -212,6 +212,8 @@ namespace Robomongo
         QMap<QString, QVariant> featureFlags() const { return _featureFlags; }
         QMap<QString, QVariant> remoteServices() const { return _remoteServices; }
         QMap<QString, QVariant> queries() const { return _queries; }
+//        std::map<std::string, std::map<std::string, std::map<std::string, std::string>>> typeAliases();
+//        std::map<std::string, std::map<std::string, std::map<std::string, std::string>>> typeDecorators();
 
         void setUseHttps(bool status) { _useHttps = status; }
 
@@ -230,7 +232,7 @@ namespace Robomongo
         /**
          * Load settings from the map. Existing settings will be overwritten.
          */
-        static void loadExtrasFromMap(QVariantMap &map);
+        void loadExtrasFromMap(QVariantMap &map);
 
         /**
          * Save all settings to map.
@@ -255,6 +257,8 @@ namespace Robomongo
         static bool importConnectionsFromOldVersion(QString const& oldConfigFilePath);
         
         static bool importConnectionsFrom_0_8_5();
+
+        static std::map<std::string, std::map<std::string, std::map<std::string, std::string>>> toConfValueMapToStdMap(QMap<QString, QVariant> value);
 
         /**
          * @brief Version of settings schema currently loaded
@@ -319,5 +323,9 @@ namespace Robomongo
         static QMap<QString, QVariant> _featureFlags;
         static QMap<QString, QVariant> _remoteServices;
         static QMap<QString, QVariant> _queries;
+        static QMap<QString, QVariant> _typeAliases;
+        static QMap<QString, QVariant> _typeDecorators;
+//        static std::map<std::string, std::map<std::string, std::map<std::string, std::string>>> *_mapTypeAliases;
+//        static std::map<std::string, std::map<std::string, std::map<std::string, std::string>>> *_mapTypeDecorators;
     };
 }

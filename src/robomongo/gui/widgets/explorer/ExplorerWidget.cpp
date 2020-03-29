@@ -156,6 +156,8 @@ namespace Robomongo
 
     void ExplorerWidget::handle(MongoExplorerTreeServerAdded *event)
     {
+        _loading = false;
+
         if (!_searchQuery.length()) {
             return;
         }
@@ -246,6 +248,26 @@ namespace Robomongo
         return nullptr;
     }
 
+    void ExplorerWidget::ui_searchTextChanged(const QString & inputValue)
+    {
+        _searchQuery = inputValue;
+
+        auto app = AppRegistry::instance().app();
+
+        // Start the default connections when none ara available
+        if (app->getServers().empty() && !_loading) {
+            _loading = true;
+
+            auto const& settingsManager = Robomongo::AppRegistry::instance().settingsManager();
+            auto searchTargets = settingsManager->defaultSearchTargets();
+
+            ensureConnections(searchTargets);
+        }
+
+        expandSearchableFolders(_treeWidget);
+        applySearchFilter(_treeWidget, _searchQuery);
+    }
+
     void ExplorerWidget::ensureConnections(const QStringList &searchTargets)
     {
         auto app = AppRegistry::instance().app();
@@ -269,44 +291,6 @@ namespace Robomongo
 
             connections << resolveConnectionRecord(remoteConnName);
         }
-
-        while (connections.length()) {
-            for (auto conn : connections) {
-                if (!conn->isConnected()) {
-                    continue;
-                }
-
-                connections.removeOne(conn);
-            }
-
-            QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
-        }
-    }
-
-    void ExplorerWidget::ui_searchTextChanged(const QString & inputValue)
-    {
-        _searchQuery = inputValue;
-
-        if (_loading) {
-            return;
-        }
-
-        auto app = AppRegistry::instance().app();
-
-        // Start the default connections when none ara available
-        if (app->getServers().empty()) {
-            _loading = true;
-
-            auto const& settingsManager = Robomongo::AppRegistry::instance().settingsManager();
-            auto searchTargets = settingsManager->defaultSearchTargets();
-
-            ensureConnections(searchTargets);
-
-            _loading = false;
-        }
-
-        expandSearchableFolders(_treeWidget);
-        applySearchFilter(_treeWidget, _searchQuery);
     }
 
     void ExplorerWidget::expandSearchableFolders(QTreeWidget *treeWidget)

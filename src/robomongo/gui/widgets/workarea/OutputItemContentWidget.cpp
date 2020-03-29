@@ -21,6 +21,7 @@
 #include "robomongo/gui/GuiRegistry.h"
 #include "robomongo/gui/editors/JSLexer.h"
 #include "robomongo/gui/editors/FindFrame.h"
+#include "robomongo/core/domain/MongoServer.h"
 
 namespace Robomongo
 {
@@ -404,7 +405,7 @@ namespace Robomongo
     BsonTreeModel *OutputItemContentWidget::configureModel()
     {
         delete _mod;
-        _mod = new BsonTreeModel(_documents, this);
+        _mod = new BsonTreeModel(_documents, this, &_queryInfo._info._ns);
         return _mod;
     }
 

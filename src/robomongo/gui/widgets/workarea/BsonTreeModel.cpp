@@ -1,6 +1,5 @@
 #include "robomongo/gui/widgets/workarea/BsonTreeModel.h"
 
-#include <mongo/client/dbclientinterface.h>
 #include "robomongo/core/settings/SettingsManager.h"
 #include "robomongo/core/AppRegistry.h"
 #include "robomongo/core/utils/BsonUtils.h"
@@ -23,8 +22,11 @@ namespace
         return QString("{ %1 %2 }").arg(itemsCount).arg(fields);
     }
 
-    void parseDocument(BsonTreeItem *root, const mongo::BSONObj &doc, bool isArray)
-    {            
+    void parseDocument(
+            BsonTreeItem *root, const mongo::BSONObj &doc, bool isArray, Robomongo::MongoNamespace *context = nullptr
+    ) {
+        auto settingsManager = Robomongo::AppRegistry::instance().settingsManager();
+
             mongo::BSONObjIterator iterator(doc);
             while (iterator.more())
             {
@@ -52,13 +54,98 @@ namespace
                 }
                 else {
                     std::string result;
-                    BsonUtils::buildJsonString(element, result, AppRegistry::instance().settingsManager()->uuidEncoding(), AppRegistry::instance().settingsManager()->timeZone());
+                    BsonUtils::buildJsonString(element, result, settingsManager->uuidEncoding(), settingsManager->timeZone());
                     childItemInner->setValue(QtUtils::toQString(result));
                 }
                 childItemInner->setType(element.type());
                 if (element.type() == mongo::BinData) {
                     childItemInner->setBinType(element.binDataType());
                 }
+
+                auto typeName = QString::fromStdString(mongo::typeName(element.type())).toLower().toStdString();
+
+                std::string decoratedType;
+
+                if (context != nullptr) {
+//                    auto typeAliases = settingsManager->typeAliases();
+//                    auto typeDecorators = settingsManager->typeDecorators();
+//
+//                    auto collectionName = context->collectionName();
+//
+//                    std::string typeDecorator;
+//                    // Resolve type alias
+//                    for (auto& path : context->connectionPath()) {
+//                        try {
+//                            typeAliases.at(path);
+//                        } catch (std::out_of_range& err) {
+//                            continue;
+//                        }
+//
+//                        auto collections = typeAliases[path];
+//
+//                        try {
+//                            collections.at(collectionName);
+//                        } catch (std::out_of_range& err) {
+//                            continue;
+//                        }
+//
+//                        auto fields = collections[path];
+//
+//                        std::string fieldRef;
+//                        fieldRef.append(fieldName);
+//                        fieldRef.append(":");
+//                        fieldRef.append(typeName);
+//
+//                        try {
+//                            fields.at(fieldRef);
+//                        } catch (std::out_of_range& err) {
+//                            continue;
+//                        }
+//
+//                        typeName = fields[fieldRef];
+//                        break;
+//                    }
+//
+//                    // Resolve type decorator
+//                    for (auto& path : context->connectionPath()) {
+//                        try {
+//                            typeDecorators.at(path);
+//                        } catch (std::out_of_range& err) {
+//                            continue;
+//                        }
+//
+//                        auto collections = typeDecorators[path];
+//
+//                        try {
+//                            collections.at(collectionName);
+//                        } catch (std::out_of_range& err) {
+//                            continue;
+//                        }
+//
+//                        auto fields = collections[path];
+//
+//                        std::string fieldRef;
+//                        fieldRef.append(fieldName);
+//                        fieldRef.append(":");
+//                        fieldRef.append(typeName);
+//
+//                        try {
+//                            fields.at(fieldRef);
+//                        } catch (std::out_of_range& err) {
+//                            continue;
+//                        }
+//
+//                        typeDecorator = fields[fieldRef];
+//                        break;
+//                    }
+//
+//                    if (typeDecorator.length() > 0) {
+//                        decoratedType = typeDecorator;
+//                    }
+                }
+
+                childItemInner->setDecoratedValue(QString::fromStdString(decoratedType));
+
                 root->addChild(childItemInner);
                 //root->setValue(QString("{ %1 fields }").arg(root->childrenCount()));
             }            
@@ -67,14 +154,18 @@ namespace
 
 namespace Robomongo
 {
-    BsonTreeModel::BsonTreeModel(const std::vector<MongoDocumentPtr> &documents, QObject *parent) :
-        BaseClass(parent),
-        _root(new BsonTreeItem(this))
+    BsonTreeModel::BsonTreeModel(
+            const std::vector<MongoDocumentPtr> &documents,
+            QObject *parent,
+            Robomongo::MongoNamespace *context
+    ) :
+            BaseClass(parent),
+            _root(new BsonTreeItem(this))
     {
         for (int i = 0; i < documents.size(); ++i) {
             MongoDocumentPtr doc = documents[i]; 
             BsonTreeItem *child = new BsonTreeItem(doc->bsonObj(), _root);
-            parseDocument(child, doc->bsonObj(), doc->bsonObj().isArray());
+            parseDocument(child, doc->bsonObj(), doc->bsonObj().isArray(), context);
 
             QString idValue;
             BsonTreeItem *idItem = child->childByKey("_id");
@@ -173,6 +264,10 @@ namespace Robomongo
             return QColor(Qt::gray);
         }
 
+        if (role == Qt::TextColorRole && col == BsonTreeItem::eDecoratedValue) {
+            return QColor(Qt::gray);
+        }
+
         if (role == Qt::DisplayRole || role == Qt::ToolTipRole) {
             if (col == BsonTreeItem::eKey) {
                 if (role == Qt::DisplayRole) {
@@ -190,6 +285,8 @@ namespace Robomongo
             }
             else if (col == BsonTreeItem::eType) {
                 result = BsonUtils::BSONTypeToString(node->type(), node->binType(), AppRegistry::instance().settingsManager()->uuidEncoding());
+            } else if (col == BsonTreeItem::eDecoratedValue) {
+                return node->decoratedValue();
             }
         }       
 
@@ -232,9 +329,12 @@ namespace Robomongo
             }
             else if (section == BsonTreeItem::eValue) {
                 return "Value";
-            }
-            else {
+            } else if (section == BsonTreeItem::eType) {
                 return "Type";
+            } else if (section == BsonTreeItem::eDecoratedValue) {
+                return "Decorated";
+            } else {
+                return "Unknown";
             }
         }
 

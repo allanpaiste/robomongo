@@ -1,6 +1,8 @@
 #pragma once
 #include <vector>
 #include <QAbstractItemModel>
+#include <robomongo/core/settings/ConnectionSettings.h>
+#include <robomongo/core/domain/MongoNamespace.h>
 #include "robomongo/core/Core.h"
 
 namespace Robomongo
@@ -14,7 +16,7 @@ namespace Robomongo
     public:
         typedef QAbstractItemModel BaseClass;
         static const QIcon &getIcon(BsonTreeItem *item);
-        explicit BsonTreeModel(const std::vector<MongoDocumentPtr> &documents, QObject *parent = 0);
+        explicit BsonTreeModel(const std::vector<MongoDocumentPtr> &documents, QObject *parent = nullptr, MongoNamespace *context = nullptr);
         QVariant data(const QModelIndex &index, int role) const;
 
         int rowCount(const QModelIndex &parent = QModelIndex()) const;

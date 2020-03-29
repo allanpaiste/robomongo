@@ -83,6 +83,10 @@ namespace Robomongo
     QMap<QString, QVariant> SettingsManager::_queries;
     QMap<QString, QVariant> SettingsManager::_remoteServices;
     QMap<QString, QVariant> SettingsManager::_featureFlags;
+    QMap<QString, QVariant> SettingsManager::_typeAliases;
+    QMap<QString, QVariant> SettingsManager::_typeDecorators;
+//    std::map<std::string, std::map<std::string, std::map<std::string, std::string>>> *SettingsManager::_mapTypeAliases;
+//    std::map<std::string, std::map<std::string, std::map<std::string, std::string>>> *SettingsManager::_mapTypeDecorators;
 
     // Temporarily disabling Recent Connections feature
     // std::vector<RecentConnection> SettingsManager::_recentConnections;
@@ -246,7 +250,65 @@ namespace Robomongo
             _queries.clear();
             _queries = map.value("queries").toMap();
         }
+
+        if (map.contains("typeAliases")) {
+            _typeAliases.clear();
+            _typeAliases = map.value("typeAliases").toMap();
+        }
+
+        if (map.contains("typeDecorators")) {
+            _typeDecorators.clear();
+            _typeDecorators = map.value("typeDecorators").toMap();
+        }
     }
+//
+//    std::map<std::string, std::map<std::string, std::map<std::string, std::string>>> SettingsManager::typeAliases() {
+//        if (_mapTypeAliases == nullptr) {
+//            auto result = toConfValueMapToStdMap(_typeAliases);
+//            _mapTypeAliases = &result;
+//        }
+//
+//        return *_mapTypeAliases;
+//    }
+//
+//    std::map<std::string, std::map<std::string, std::map<std::string, std::string>>> SettingsManager::typeDecorators() {
+//        if (_mapTypeDecorators == nullptr) {
+//            auto result = toConfValueMapToStdMap(_typeDecorators);
+//            _mapTypeDecorators = &result;
+//        }
+//
+//        return *_mapTypeDecorators;
+//    }
+//
+//    std::map<std::string, std::map<std::string, std::map<std::string, std::string>>>SettingsManager::toConfValueMapToStdMap(
+//            QMap<QString, QVariant> value
+//    ) {
+//        std::map<std::string, std::map<std::string, std::map<std::string, std::string>>> result;
+//
+//        QMap<QString, QVariant>::iterator connIterator;
+//        for (connIterator = value.begin(); connIterator != value.end(); ++connIterator) {
+//            std::map<std::string, std::map<std::string, std::string>> collections;
+//
+//            auto _collections = connIterator.value().toMap();
+//            QMap<QString, QVariant>::iterator _iCollections;
+//            for (_iCollections = _collections.begin(); _iCollections != _collections.end(); ++_iCollections) {
+//                std::map<std::string, std::string> definitions;
+//
+//                auto _definitions = _iCollections.value().toMap();
+//                QMap<QString, QVariant>::iterator _iDefinitions;
+//                for (_iDefinitions = _definitions.begin(); _iDefinitions != _definitions.end(); ++_iDefinitions) {
+//                    definitions[_iDefinitions.key().toStdString()] = _iDefinitions.value()
+//                            .toString().toStdString();
+//                }
+//
+//                collections[_iDefinitions.key().toStdString()] = definitions;
+//            }
+//
+//            result[connIterator.key().toStdString()] = collections;
+//        }
+//
+//        return result;
+//    }
 
     /**
      * Load settings from the map. Existing settings will be overwritten.
@@ -481,6 +543,12 @@ namespace Robomongo
 
         // 25. Save default search targets
         map.insert("defaultSearchTargets", _defaultSearchTargets);
+
+        // 26. Remote services
+        map.insert("typeAliases", _typeAliases);
+
+        // 27. Remote services
+        map.insert("typeDecorators", _typeDecorators);
 
         map.insert("autoExec", _autoExec);
         map.insert("minimizeToTray", _minimizeToTray);

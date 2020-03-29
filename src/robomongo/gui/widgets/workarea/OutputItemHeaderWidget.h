@@ -54,6 +54,7 @@ namespace Robomongo
         Indicator *_collectionIndicator;
         Indicator *_timeIndicator;
         PagingWidget *_paging;
+        QLineEdit *_searchField;
 
         bool _maximized;
         bool _multipleResults;
