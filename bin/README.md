@@ -65,11 +65,13 @@ curl -Lo- http://download.qt.io/archive/qt/5.9/5.9.3/qt-opensource-mac-x64-5.9.3
 hdiutil attach qt-opensource-mac-x64-5.9.3.dmg
 open /Volumes/qt-opensource-mac-x64-5.9.3/qt-opensource-mac-x64-5.9.3.app
 
-# Install it to the /path/to/project/roots/qt
-# Make sure that the following are included in the installation:
-# * macOS
-# * (All Qt libraries)
 ```
+
+Install it to the /path/to/projects/qt
+
+Make sure that the following are included in the installation:
+* macOS
+* (All Qt libraries)
 
 ## Build
 
