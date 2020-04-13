@@ -1,18 +1,16 @@
-Pre-requisites for build
+# Pre-requisites for build
 ========================
 
 The following guide covers the steps/extras needed to build Robomongo.
 
-Prerequisites
--------------
+## Prerequisites
 
 Note that this guide DOES assume that all the dependencies/sources share same root path (example: every library is within
 the folder /my/projects). This requirement/recommendation DOES include this project as well. 
 
 If you don't have such a setup for dependent libraries in such a way, you are STRONGLY encouraged to do so. 
 
-Install Homebrew
-""""""""""""""""
+### Install Homebrew
 
 This will just make the installation of certain libraries so much easier.
 
@@ -20,8 +18,7 @@ This will just make the installation of certain libraries so much easier.
 /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 ``` 
 
-Install Mongo-Shell
-"""""""""""""""""""
+### Install Mongo-Shell
 
 Resides in another repository which you should clone to the same projects root.
 
@@ -31,8 +28,7 @@ git clone git@github.com:allanpaiste/robomongo-shell.git
 
 After this you should follow the guide in bin/README.md
 
-Install Open SSL
-""""""""""""""""
+### Install Open SSL
 
 This guide assumes that you are in the root of the repositories 
 
@@ -51,15 +47,13 @@ make -j9
 # the build process which you can ignore 
 ```
 
-Install Gcc & CMake 
-"""""""""""""""""""
+### Install Gcc & CMake 
 
 ```shell
 brew install gcc cmake
 ```
 
-Install Qt
-""""""""""
+### Install Qt
 
 This will be a ~3.5G download.
 
@@ -76,8 +70,7 @@ open /Volumes/qt-opensource-mac-x64-5.9.3/qt-opensource-mac-x64-5.9.3.app
 # * (All Qt libraries)
 ```
 
-Build
------
+## Build
 
 Configure Robomongo project (only one of these is needed but when working with the project, it's better to have 
 both release and debug configurations ready):
