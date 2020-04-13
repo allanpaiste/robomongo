@@ -59,7 +59,9 @@ This will be a ~3.5G download.
 Execute it in the root folder of the repositories
 
 ```shell
-curl -Lo- http://download.qt.io/archive/qt/5.9/5.9.3/qt-opensource-mac-x64-5.9.3.dmg > qt-opensource-mac-x64-5.9.3.dmg
+curl -Lo- http://download.qt.io/archive/qt/5.9/5.9.3/qt-opensource-mac-x64-5.9.3.dmg > \
+    qt-opensource-mac-x64-5.9.3.dmg
+
 hdiutil attach qt-opensource-mac-x64-5.9.3.dmg
 open /Volumes/qt-opensource-mac-x64-5.9.3/qt-opensource-mac-x64-5.9.3.app
 
