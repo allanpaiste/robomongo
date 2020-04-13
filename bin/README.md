@@ -1,5 +1,4 @@
 # Pre-requisites for build
-========================
 
 The following guide covers the steps/extras needed to build Robomongo.
 
