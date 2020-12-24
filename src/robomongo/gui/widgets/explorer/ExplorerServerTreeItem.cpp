@@ -3,6 +3,8 @@
 #include <QAction>
 #include <QMenu>
 #include <QMessageBox>
+#include <QCoreApplication>
+#include <QTime>
 
 #include "robomongo/core/domain/MongoServer.h"
 #include "robomongo/core/domain/MongoDatabase.h"
@@ -19,7 +21,6 @@
 #include "robomongo/gui/dialogs/CreateDatabaseDialog.h"
 #include "robomongo/gui/GuiRegistry.h"
 
-
 namespace
 {
      void openCurrentServerShell(Robomongo::MongoServer *const server, const QString &script, bool execute = true, 
@@ -32,6 +33,8 @@ namespace
 
 namespace Robomongo
 {
+    R_REGISTER_EVENT(MongoExplorerTreeServerAdded)
+
     ExplorerServerTreeItem::ExplorerServerTreeItem(QTreeWidget *view, MongoServer *const server, ConnectionInfo connInfo)
         : BaseClass(view), _server(server), _bus(AppRegistry::instance().bus()), _replicaSetFolder(nullptr),
         _primaryWasUnreachable(false), _systemFolder(nullptr)
@@ -152,6 +155,8 @@ namespace Robomongo
 
         // Show 'System' folder only if it has items
         _systemFolder->setHidden(_systemFolder->childCount() == 0);
+
+        _bus->publish(new MongoExplorerTreeServerAdded(this, this));
     }
 
     void ExplorerServerTreeItem::handle(DatabaseListLoadedEvent *event)

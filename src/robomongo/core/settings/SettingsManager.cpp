@@ -62,6 +62,8 @@ namespace Robomongo
     //                 vector initializer list below in order.
     std::vector<QString> const SettingsManager::_configFilesOfOldVersions
     {
+        QString("%1/.3T/robo-3t/1.3.1.1/robo3t.json").arg(QDir::homePath()),          // CONFIG_FILE_1_3_0_BETA
+        QString("%1/.3T/robo-3t/1.3.1/robo3t.json").arg(QDir::homePath()),          // CONFIG_FILE_1_3_0_BETA
         QString("%1/.3T/robo-3t/1.3.0/robo3t.json").arg(QDir::homePath()),          // CONFIG_FILE_1_3_0_BETA
         QString("%1/.3T/robo-3t/1.2.1/robo3t.json").arg(QDir::homePath()),          // CONFIG_FILE_1_2_1
         QString("%1/.3T/robo-3t/1.2.0/robo3t.json").arg(QDir::homePath()),          // CONFIG_FILE_1_2_0_BETA
@@ -73,8 +75,15 @@ namespace Robomongo
         CONFIG_FILE_0_8_5                                                           // CONFIG_FILE_0_8_5
     };
 
-    std::vector<ConnectionSettings*>  SettingsManager::_connections;
-    
+    std::vector<ConnectionSettings*> SettingsManager::_connections;
+
+    QMap<QString, QVariant> SettingsManager::_collectionRelations;
+    QMap<QString, QVariant> SettingsManager::_connectionAliases;
+    QStringList SettingsManager::_defaultSearchTargets;
+    QMap<QString, QVariant> SettingsManager::_queries;
+    QMap<QString, QVariant> SettingsManager::_remoteServices;
+    QMap<QString, QVariant> SettingsManager::_featureFlags;
+
     // Temporarily disabling Recent Connections feature
     // std::vector<RecentConnection> SettingsManager::_recentConnections;
 
@@ -136,8 +145,39 @@ namespace Robomongo
             return false;
 
         loadFromMap(map);
+        loadExtrasFromMap(map);
+
+        QVariantMap mapExtras = loadFileToMap(ConfigFileExtrasPath);
+
+        if (mapExtras.count()) {
+            loadExtrasFromMap(mapExtras);
+        }
 
         return true;
+    }
+
+    QVariantMap SettingsManager::loadFileToMap(QString filePath)
+    {
+        bool ok;
+
+        if (!QFile::exists(ConfigFileExtrasPath)) {
+            return QVariantMap();
+        }
+
+        QFile fExtras(ConfigFileExtrasPath);
+
+        if (!fExtras.open(QIODevice::ReadOnly)) {
+            return QVariantMap();
+        }
+
+        QJson::Parser parser;
+        QVariantMap mapExtras = parser.parse(fExtras.readAll(), &ok).toMap();
+
+        if (!ok) {
+            return QVariantMap();
+        }
+
+        return mapExtras;
     }
 
     /**
@@ -174,8 +214,42 @@ namespace Robomongo
         return _cacheData.value(key);
     }
 
+    void SettingsManager::loadExtrasFromMap(QVariantMap &map)
+    {
+        if (map.contains("featureFlags")) {
+            _featureFlags.clear();
+            _featureFlags = map.value("featureFlags").toMap();
+        }
+
+        if (map.contains("relations")) {
+            _collectionRelations.clear();
+            _collectionRelations = map.value("relations").toMap();
+        }
+
+        if (map.contains("connectionAliases")) {
+            _connectionAliases.clear();
+            _connectionAliases = map.value("connectionAliases").toMap();
+        }
+
+        if (map.contains("defaultSearchTargets")) {
+            _defaultSearchTargets.clear();
+            _defaultSearchTargets = map.value("defaultSearchTargets").toStringList();
+        }
+
+
+        if (map.contains("remoteServices")) {
+            _remoteServices.clear();
+            _remoteServices = map.value("remoteServices").toMap();
+        }
+
+        if (map.contains("queries")) {
+            _queries.clear();
+            _queries = map.value("queries").toMap();
+        }
+    }
+
     /**
-     * Load settings from the map. Existings settings will be overwritten.
+     * Load settings from the map. Existing settings will be overwritten.
      */
     void SettingsManager::loadFromMap(QVariantMap &map)
     {
@@ -274,6 +348,8 @@ namespace Robomongo
             connSettings->fromVariant(conn.toMap());
             addConnection(connSettings);
         }
+
+        loadExtrasFromMap(map);
 
         /* Temporarily disabling Recent Connections feature
         // Load recent connections
@@ -387,6 +463,24 @@ namespace Robomongo
         }
         map.insert("recentConnections", recentConnsList);
         */
+
+        // 20. Save relations
+        map.insert("relations", _collectionRelations);
+
+        // 21. Save connection aliases
+        map.insert("connectionAliases", _connectionAliases);
+
+        // 22. Save queries
+        map.insert("queries", _queries);
+
+        // 23. Remote services
+        map.insert("remoteServices", _remoteServices);
+
+        // 24. Save feature flags
+        map.insert("featureFlags", _featureFlags);
+
+        // 25. Save default search targets
+        map.insert("defaultSearchTargets", _defaultSearchTargets);
 
         map.insert("autoExec", _autoExec);
         map.insert("minimizeToTray", _minimizeToTray);
@@ -526,6 +620,19 @@ namespace Robomongo
         }
 
         LOG_MSG("Failed to find connection settings object by UUID.", mongo::logger::LogSeverity::Warning());
+        return nullptr;
+    }
+
+    ConnectionSettings* SettingsManager::getConnectionSettingsByName(QString const& name) const
+    {
+        const auto lookupName = name.toStdString();
+
+        for (auto const connSettings : _connections){
+            if (connSettings->connectionName() == lookupName)
+                return connSettings;
+        }
+
+        LOG_MSG("Failed to find connection settings object by name.", mongo::logger::LogSeverity::Warning());
         return nullptr;
     }
 

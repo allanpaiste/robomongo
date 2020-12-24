@@ -20,10 +20,15 @@ namespace Robomongo
                                                              .arg(PROJECT_VERSION);
     // Current config file
     auto const ConfigFilePath = QString("%1/.3T/robo-3t/%2/robo3t.json").arg(QDir::homePath())
-                                                                        .arg(PROJECT_VERSION);  
+                                                                        .arg(PROJECT_VERSION);
+
+    // Custom/manual overrides to the normal config
+    auto const ConfigFileExtrasPath = QString("%1/robo3t.json").arg(QDir::homePath());
+
     // Current config file directory
     auto const ConfigDir = QString("%1/.3T/robo-3t/%2/").arg(QDir::homePath())
-                                                        .arg(PROJECT_VERSION);  
+                                                        .arg(PROJECT_VERSION);
+
     /* Temporarily disabling Recent Connections feature
     struct RecentConnection
     {
@@ -113,6 +118,7 @@ namespace Robomongo
         */
         ConnectionSettings* getConnectionSettingsByUuid(QString const& uuid) const;
         ConnectionSettings* getConnectionSettingsByUuid(std::string const& uuid) const;
+        ConnectionSettings* getConnectionSettingsByName(QString const& name) const;
 
         void reorderConnections(const ConnectionSettingsContainerType &connections);
 
@@ -199,6 +205,14 @@ namespace Robomongo
         bool programExitedNormally() const { return _programExitedNormally; }
 
         bool useHttps() const { return _useHttps; }
+
+        QMap<QString, QVariant> collectionRelations() const { return _collectionRelations; }
+        QMap<QString, QVariant> connectionAliases() const { return _connectionAliases; }
+        QStringList defaultSearchTargets() const { return _defaultSearchTargets; }
+        QMap<QString, QVariant> featureFlags() const { return _featureFlags; }
+        QMap<QString, QVariant> remoteServices() const { return _remoteServices; }
+        QMap<QString, QVariant> queries() const { return _queries; }
+
         void setUseHttps(bool status) { _useHttps = status; }
 
         /**
@@ -214,9 +228,19 @@ namespace Robomongo
         void loadFromMap(QVariantMap &map);
 
         /**
+         * Load settings from the map. Existing settings will be overwritten.
+         */
+        static void loadExtrasFromMap(QVariantMap &map);
+
+        /**
          * Save all settings to map.
          */
         QVariantMap convertToMap() const;
+
+        /**
+         * Load file contents to QVariantMap
+         */
+        QVariantMap loadFileToMap(QString filePath);
 
         // Find existing anonymousID from Robomongo and 3T config files, if not found create
         // a new anonymousID.
@@ -288,5 +312,12 @@ namespace Robomongo
         // List of config. file absolute paths of old versions
         // Must be updated with care and with every new version. Details on cpp file.       
         static std::vector<QString> const _configFilesOfOldVersions;
+
+        static QMap<QString, QVariant> _collectionRelations;
+        static QMap<QString, QVariant> _connectionAliases;
+        static QStringList _defaultSearchTargets;
+        static QMap<QString, QVariant> _featureFlags;
+        static QMap<QString, QVariant> _remoteServices;
+        static QMap<QString, QVariant> _queries;
     };
 }

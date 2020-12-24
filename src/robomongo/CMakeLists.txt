@@ -158,6 +158,7 @@ target_link_libraries(robomongo
 if(APPLE)
   find_library(SECURITY NAMES Security)
   find_library(CORE_FOUNDATION NAMES CoreFoundation)
+
   set(SSL_LIBRARIES ${SECURITY} ${CORE_FOUNDATION})
   
   target_link_libraries(robomongo

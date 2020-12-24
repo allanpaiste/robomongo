@@ -3,13 +3,15 @@ project(Robomongo)
 
 # Where to look first for CMake modules, before "${CMAKE_ROOT}/Modules" is checked
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
+#list(APPEND CMAKE_PREFIX_PATH "../qt/5.9.3/clang_64" "../robomongo-shell" "../openssl" "../robomongo-shell/build/debug")
 
 # Project version
 set(PROJECT_VERSION_MAJOR "1")
 set(PROJECT_VERSION_MINOR "3")
 set(PROJECT_VERSION_PATCH "1")
+set(PROJECT_VERSION_SUB "2")
 set(PROJECT_VERSION_BUILD "")
-set(PROJECT_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}${PROJECT_VERSION_BUILD}")
+set(PROJECT_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}.${PROJECT_VERSION_SUB}${PROJECT_VERSION_BUILD}")
 
 # Enable C++14 features 
 set(CMAKE_CXX_STANDARD 14)
@@ -26,7 +28,7 @@ include(RobomongoInstallQt)
 include(RobomongoPackage)
 
 # Search for dependencies
-find_package(Threading REQUIRED)    # Wrapper arround CMake "Threads" module
+find_package(Threading REQUIRED)    # Wrapper around CMake "Threads" module
 find_package(Qt5Core REQUIRED)
 find_package(Qt5Gui REQUIRED)
 find_package(Qt5Widgets REQUIRED)
